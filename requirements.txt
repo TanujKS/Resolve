@@ -1,5 +1,4 @@
 openai
 requests
-bs4
 python-dotenv
-lxml
+streamlit
