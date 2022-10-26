@@ -2,7 +2,8 @@ import requests
 from dotenv import load_dotenv
 import os
 import openai
-import exceptions
+from utils import exceptions
+from utils.utils import *
 import json
 import re
 import shutil
@@ -12,134 +13,325 @@ API_KEY = os.getenv("API_KEY")
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
-def removeAll(list, removers: list):
-    for remover in removers:
-        while remover in list:
-            list.remove(remover)
-    return list
-
-
 class Bill:
     base_url = "https://api.congress.gov/v3/bill"
     apikey_header = f"api_key={API_KEY}"
-    _title = None
-    _titles = []
-    _textURL = ""
-    _text = ""
-    _summary = ""
 
-    def __init__(self, congress, billType, number):
-        data = requests.get(f"{self.base_url}/{congress}/{billType}/{number}?{self.apikey_header}").json()
-        if not data.get('bill'):
-            raise exceptions.NoBill("Bill does not exist")
-        self.raw = data['bill']
+    types_of_sort = {
+    "Latest Action Taken": None,
+    "Latest Update": "updateDate+desc",
+    "Earliest Update": "updateDate+asc",
+    }
+
+    types_of_legislation = {
+    "hr": "House Bill",
+    "s": "Senate Bill",
+    "hjres": "House Joint Resolution",
+    "sjres": "Senate Joint Resolution",
+    "hconres": "House Concurrent Resolution",
+    "sconres": "Senate Concurrent Resolution",
+    "hres": "House Resolution",
+    "sres": "Senate Resolution"
+    }
+
+    types_of_legislation_display = {
+    "House Bill": "hr",
+    "Senate Bill": "s",
+    "House Joint Resolution": "hjres",
+    "Senate Joint Resolution": "sjres",
+    "House Concurrent Resolution": "hconres",
+    "Senate Concurrent Resolution": "sconres",
+    "House Resolution": "hres",
+    "Senate Resolution": "sres"
+    }
+
+    def __init__(self, congress, type, number):
+        self.congress = congress
+        self.type = type
+        self.number = number
 
 
     @classmethod
-    def getTextOnly(cls, congress, billType, number):
-        data = requests.get(f"{cls.base_url}/{congress}/{billType}/{number}/text?{cls.apikey_header}").json()
+    def from_dict(cls, data):
+        congress = data['congress']
+        type = data['type'].lower()
+        number = data['number']
+        bill = cls(congress, type, number)
+
+        bill.title = data.get('title')
+        bill.latestAction = data.get('latestAction')
+        bill.originChamber = data.get('originChamber')
+
+        return bill
+
+
+    @classmethod
+    def recentBills(cls, congress, type, **kwargs):
+        data = requests.get(f"{cls.base_url}/{congress}/{type}?{cls.apikey_header}&limit={kwargs.get('limit', 20)}&offset={kwargs.get('offset', 0)}&sort={kwargs.get('sort', None)}").json()
+        recentBills = data.get('bills')
+
         if data.get('error'):
-            raise Exception(data['error']['message'])
+            raise Exception(data['error'])
+
+        bills = [Bill.from_dict(bill) for bill in recentBills]
+        return bills
+
+
+    def getInfo(self):
+        data = requests.get(f"{self.base_url}/{self.congress}/{self.type}/{self.number}?{self.apikey_header}").json()
+        bill = data.get('bill')
+        print(bill)
+
+        if not bill:
+            raise exceptions.NoBill(f"Bill {self.type.upper()} {self.number} does not exist")
+
+        self.introducedDate = bill.get('introducedDate')
+        self.sponsors = bill.get('sponsors')
+        self.title = bill.get('title')
+        self.policyArea = bill.get('policyArea')
+        self.laws = bill.get('laws')
+        self.cboCostEstimates = bill.get('cboCostEstimates')
+        self.committeeReports = bill.get('committeeReports')
+        self.constitutionalAuthorityStatementText = bill.get('constitutionalAuthorityStatementText')
+        self.updateDate = bill.get('updateDate')
+        self.latestAction = bill.get('latestAction')
+        self.originChamber = bill.get('originChamber')
+
+        return True
+
+
+    def getTitles(self):
+        data = requests.get(f"{self.base_url}/{self.congress}/{self.type}/{self.number}/titles?{self.apikey_header}", verify=True).json()
+        titles = []
+
+        if data.get('error'):
+            raise Exception(data['error'])
+
+        for title in data['titles']:
+            titles.append(title['title'])
+
+        return titles
+
+
+    def getTitle(self):
+        titles = self.getTitles()
+
+        if titles:
+            lastTitle = titles[len(titles) - 1]
+            lastTitle = self.pruneText(lastTitle)
+            return lastTitle
+
+        else:
+            return None
+
+
+    def getTextURL(self, type="Formatted Text"):
+        data = requests.get(f"{self.base_url}/{self.congress}/{self.type}/{self.number}/text?{self.apikey_header}", verify=True).json()
+
+        if data.get('error'):
+            raise Exception(data['error'])
+
         if data.get('textVersions'):
             for format in data['textVersions'][0]['formats']:
-                if format['type'] == "Formatted Text":
-                    print(format['url'])
-                    textList = requests.get(format['url']).text.splitlines()
-                    textList = removeAll([item.strip() for item in textList], ["_", "", '"'])
-                    index = 11
-                    text = ""
-                    for i in range(index, len(textList)-4):
-                        text += " " + textList[i]
-                    return text
-        return None
-
-
-    @property
-    def titles(self):
-        if not self._titles:
-            titlesData = requests.get(f"{self.raw['titles']['url']}&{self.apikey_header}").json()['titles']
-            for title in titlesData:
-                _titles.append(title['title'])
-        return self._titles
-
-
-    @property
-    def title(self):
-        if not self._title:
-            print("Updating")
-            self._title = self.titles[len(self.titles)-1]
-        return self._title
-
-
-    @property
-    def textURL(self):
-        if self._textURL == "":
-            if self.raw.get('textVersions'):
-                self._textURL = requests.get(f"{self.raw['textVersions']['url']}&{self.apikey_header}").json()['textVersions'][0]['formats'][0]['url']
+                if format['type'] == type:
+                    return format['url']
             else:
-                self._textURL = None
-        return self._textURL
+                raise Exception("Text is not avaiable in the requested format.")
+
+        else:
+            return None
 
 
-    @property
-    def text(self):
-        if self._text == "":
-            print("Updating")
-            textURL = self.textURL
-            if textURL:
-                textList = requests.get(textURL).text.splitlines()
-                textList = removeAll([item.strip() for item in textList], "")
-                index = 11
-                text = ""
-                for i in range(index, len(textList)-4):
-                    text += " " + textList[i]
-                self._text = text
-            else:
-                self._text = None
-        return self._text
-
-
+    #Removes most non ASCII chars from text
     @staticmethod
-    def cleanSummary(text):
-        return re.sub('<.*?>', '', text)
+    def pruneText(text):
+        removers = ["_", "`", "''.", "&lt;DOC&gt;", "&lt;all&gt;", "&nbsp;"]
+        text = removeTags(text)
+        text = removeBrackets(text)
+        for remover in removers:
+            text = text.replace(remover, "")
+        text = re.sub(' +', ' ', text)
+        text = text.lstrip().strip()
+        return text
 
 
-    @property
-    def summary(self):
-        if self._summary == "":
-            if bill.get('summaries'):
-                summaries = requests.get(f"{bill['summaries']['url']}&{apikey_header}").json()['summaries']
-                text = summaries[len(summaries)-1]['text']
-                text = text.replace("<p>", "").replace("</p>", "").replace("<b>", "").replace("</b>", "").replace('<p class="MsoNormal">', "").replace("<strong", "")
-                self._summary = text
+    #not combined with prune text as it is only used for the text of the bill
+    def cleanRawText(self, textRaw):
+        def getStartingIndex(textList):
+            for line in textList:
+                if not "An Act" in line and not "a bill" in line.lower() and not "AN ACT" in line and not "RESOLUTION" in line:
+                    continue
+                return textList.index(line) + 1
             else:
-                self._summary = None
-        return self._summary
+                for line in textList:
+                    if not "To" in line:
+                        continue
+                    return textList.index(line)
+                else:
+                    return 0
+
+        def getFinishingIndex(textList):
+            for i in range(len(textList) - 1, 0, -1):
+                if not "Passed" in textList[i] and not "Attest" in textList[i] and not "Speaker of the House of Representatives" in textList[i] and not "Union Calendar" in textList[i]:
+                    continue
+                return i
+            else:
+                return len(textList)
+
+        text = ""
+        textList = textRaw.splitlines()
+        textList = [item.strip() for item in textList]
+        textList = removeAll(textList, [''])
+
+        for section in textList:
+            textList[textList.index(section)] = self.pruneText(section)
+
+        startingIndex = getStartingIndex(textList)
+        finishingIndex = getFinishingIndex(textList)
+
+        for i in range(startingIndex, finishingIndex):
+            text += "\n" + textList[i]
+
+        return text
+
+
+    def getRawText(self):
+        url = self.getTextURL()
+
+        if url:
+            rawText = requests.get(url).text
+
+            if "JavaScript" in rawText:
+                raise exceptions.RateLimited("You have been rate limited. Please try again later.")
+
+            return rawText
+
+        else:
+            return None
+
+
+    def getText(self):
+        rawText = self.getRawText()
+
+        if rawText:
+            text = self.pruneText(rawText)
+            text = self.cleanRawText(text)
+            return text
+
+        else:
+            return None
 
 
     def getSummary(self):
-        text = self.text
+        data = requests.get(f"{self.base_url}/{self.congress}/{self.type}/{self.number}/summaries?{self.apikey_header}").json()
+        summaries = data.get('summaries')
+
+        if summaries:
+            text = summaries[len(summaries)-1]['text']
+            text = self.pruneText(text)
+            return text
+        else:
+            return None
+
+
+    def getActions(self):
+        data = requests.get(f"{self.base_url}/{self.congress}/{self.type}/{self.number}/actions?{self.apikey_header}").json()
+        actions = data.get('actions')
+
+        if data.get('error'):
+            raise Exception(data['error'])
+
+        return actions
+
+
+    def getAmendments(self):
+        data = requests.get(f"{self.base_url}/{self.congress}/{self.type}/{self.number}/amendments?{self.apikey_header}").json()
+        amendments = data.get('amendments')
+
+        if data.get('error'):
+            raise Exception(data['error'])
+
+        return amendments
+
+
+    def getRelatedBills(self):
+        data = requests.get(f"{self.base_url}/{self.congress}/{self.type}/{self.number}/relatedBills?{self.apikey_header}").json()
+        relatedBills = data.get('relatedBills')
+        bills = [RelatedBill.from_dict(bill) for bill in relatedBills]
+
+        if data.get('error'):
+            raise Exception(data['error'])
+
+        return bills
+
+
+    def generateSummary(self):
+        text = self.getText()
+
         if not text:
-            return "No Text Provided"
-        response = openai.Completion.create(
-            model="text-davinci-002",
-            prompt=f"Imagine you are a politican explaining bills too an educated citizen. Thoroughly summarize this bill: {text}.",
-            temperature=0.7,
-            max_tokens=256,
-            top_p=1,
-            frequency_penalty=0,
-            presence_penalty=0
-        )
-        return response['choices'][0]['text']
+            raise Exception("Text is not avaiable for this bill.")
+
+        tuned = True
+        model = "curie:ft-personal-2022-10-23-09-13-31"
+        beginning = "Write a succinct paragraph summarizing only the important key points of the following text: \n\n"
+        ending = "\nSummary:"
+        prompt = beginning + text + ending
+        temperature = 0.7
+        max_tokens = 256
+        top_p = 1
+        frequency_penalty = 1
+        presence_penalty = 0
+        stop = ["\n"]
+
+        try:
+            response = openai.Completion.create(
+                model = model,
+                prompt = prompt,
+                temperature = temperature,
+                max_tokens = max_tokens,
+                top_p = top_p,
+                frequency_penalty = frequency_penalty,
+                presence_penalty = presence_penalty,
+                stop=stop
+            )
+
+        except openai.error.InvalidRequestError:
+            tuned = False
+            try:
+                response = openai.Completion.create(
+                    model="text-davinci-002",
+                    prompt = prompt,
+                    temperature = temperature,
+                    max_tokens = max_tokens * 2,
+                    top_p = top_p,
+                    frequency_penalty = frequency_penalty,
+                    presence_penalty = presence_penalty,
+                )
+
+            except openai.error.InvalidRequestError:
+                raise Exception("Text is too large to be summarized")
+
+
+        print(response)
+
+
+        choice = response['choices'][0]['text']
+        choice = self.pruneText(choice)
+
+        return choice, tuned
 
 
 
-# bills = getAllBills(117, "hr")
-# for billNum in bills:
-# bill = getBill(117, "hr", 2379)
-# print(f"Bill: {bill['number']}: {getTitles(bill)}")
-# print("\n\n")
-# print(f"Original Summary: {getCongressSummary(bill)}")
-# print("\n\n")
-# print(f"Summary: {getSummary(bill)}")
-# print("\n\n")
+class RelatedBill(Bill):
+    @classmethod
+    def from_dict(cls, data):
+        bill = cls.from_dict(data)
+        bill.relationshipDetails = data['relationshipDetails']
+
+
+if __name__ == "__main__":
+    bill = Bill(117, "hr", 24)
+    print(bill.textURL)
+    print(bill.rawText)
+    print("\n\n")
+    print(bill.text)
