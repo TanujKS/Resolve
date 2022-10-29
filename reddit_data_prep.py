@@ -5,6 +5,8 @@ from datetime import datetime
 from dotenv import load_dotenv
 import os
 import numpy as np
+import csv
+
 
 load_dotenv()
 base_headers = {'user-agent': 'Windows PC:resolve:v1.0.0 (by /u/awesome225007)'}
@@ -94,14 +96,20 @@ def fetchData(total, newAuth=False):
         file.write(df.to_json())
 
 
-# def getRoundedScores(scores_list):
-#     for i in range(0, len(scores_list)):
-#         scores_list[i] = round(scores_list[i], (len(str(scores_list[i])) - 1) * -1)
-#         scores_list[i] *=  10**-5
-#         scores_list[i] = round(scores_list[i], 2)
-#
-#     return scores_list
-#
+def fromCSV():
+    with open(f'{folder}/reddit_politics.csv', mode='r') as csv_file:
+        csv_reader = csv.DictReader(csv_file)
+        data_list = [row for row in csv_reader]
+        df = pd.DataFrame.from_records(data_list)
+        df_comments = df[ df['title'] == "Comment"] # Step 1
+        df = df.drop(df_comments.index, axis=0)
+
+
+        print(df.head())
+        with open(f"{folder}/data.json", "w+") as file:
+            file.write(df.to_json())
+
+
 def createSigScores():
     df = pd.read_json(f"{folder}/data.json")
 
@@ -126,9 +134,9 @@ def createSigScores():
 
 
 def main():
-    fetchData(5000)
+    fetchData(5000, newAuth=False)
     createSigScores()
 
 
 if __name__ == "__main__":
-    main()
+    createSigScores()

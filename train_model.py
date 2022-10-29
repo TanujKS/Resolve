@@ -19,7 +19,7 @@ vectorizer.fit(post_train)
 
 x_train = vectorizer.transform(post_train)
 x_test = vectorizer.transform(post_test)
-print(repr(x_train))
+
 
 
 classifier = LogisticRegression()
@@ -28,8 +28,8 @@ score = classifier.score(x_test, y_test)
 
 print("Accuracy:", score)
 
-x_test = vectorizer.transform(["To name the Department of Veterans Affairs community-based outpatient clinic in Vallejo, California, as the 'Delphine Metcalf-Foster VA Clinic'."])
-
+x_test = vectorizer.transform(["To establish a post office"])
+#
 y_pred = classifier.predict(x_test)
-
+#
 print(y_pred)
