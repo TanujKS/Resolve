@@ -1,6 +1,6 @@
 import streamlit as st
 from bill import Bill
-
+import json
 
 # with st.sidebar:
 #     st.header("Our Mission")
@@ -81,35 +81,47 @@ def renderRecent():
 
 
     key1 = 0
-    key2 = len(recentBills)
-    key3 = len(recentBills) * 2
+    key2 = len(recentBills) * (2**0)
+    key3 = len(recentBills) * (2**1)
+    key4 = len(recentBills) * (2**2)
+    key5 = len(recentBills) * (2**3)
 
     for bill in recentBills:
-        renderBill(bill, key1=key1, key2=key2, key3=key3)
+        renderBill(bill, key1=key1, key2=key2, key3=key3, key4=key4, key5=key5)
         key1 += 1
         key2 += 1
         key3 += 1
-
+        key4 += 1
+        key5 += 1
 
 def renderBill(bill, **kwargs):
     key1 = kwargs.get('key1')
     key2 = kwargs.get('key2')
     key3 = kwargs.get('key3')
+    key4 = kwargs.get('key4')
+    key5 = kwargs.get('key5')
+
     try:
         with st.expander(f"{bill.type.upper()} {bill.number}: {bill.title}"):
 
-            tab1, tab2, tab3 = st.tabs(["Info", "Text", "Summary"])
+            tab1, tab2, tab3, tab4 = st.tabs(["Info", "Text", "Summary", "Brief"])
 
             with tab1:
 
                 spacing = "&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"
 
-                if st.button("More Information", key=kwargs.get('key1')):
+                if st.button("More Information", key=key1):
                     bill.getInfo()
 
                     st.markdown(f"Congress Session: **{bill.congress}**")
 
                     st.markdown(f"Number: **{bill.type.upper()} {bill.number}**")
+
+                    st.markdown("Also known as:")
+                    titles = bill.getTitles()
+                    titles.remove(bill.title)
+                    for title in titles:
+                        st.markdown(f"{spacing}**{title}**")
 
                     st.markdown(f"Introduced on: **{bill.introducedDate}**")
 
@@ -135,7 +147,7 @@ def renderBill(bill, **kwargs):
 
 
             with tab2:
-                if st.button("Fetch Text", key=kwargs.get('key2')):
+                if st.button("Fetch Text", key=key2):
                     text = bill.getText()
 
                     if text:
@@ -177,15 +189,45 @@ def renderBill(bill, **kwargs):
 
 
             with tab3:
-                if st.button("Summarize", key=kwargs.get('key3')):
+                summarized = getattr(st.session_state, str(bill.number), False)
+
+                summarize_button = st.button("Summarize", key=key3)
+
+                if summarize_button:
+                    st.session_state[bill.number] = False
 
                     summary, tuned = bill.generateSummary()
 
                     if not tuned:
-                        st.info('Text was too large to be summarized with a fine-tuned model')
+                        print('Text was too large to be summarized with a fine-tuned model')
 
                     st.write(summary)
 
+                    def good_summary_click(bill, completion):
+
+                        data = {
+                        "prompt": bill.getText(),
+                        "completion": completion
+                        }
+
+                        with open("data/human_feedback.jsonl", "a") as file:
+                            file.write("\n")
+                            file.write(json.dumps(data))
+
+                        number = str(bill.number)
+                        st.session_state[number] = True
+
+                    st.button("I Like This!", on_click=good_summary_click, args=(bill, summary), key=key4)
+
+
+                if getattr(st.session_state, str(bill.number), False):
+                    st.subheader("Thanks for your feedback!")
+
+            with tab4:
+                 if st.button("Get Brief", key=key5):
+                     key_points = bill.generateBrief()
+                     for point in key_points:
+                         st.write(point)
 
     except Exception as error:
         st.error(error)

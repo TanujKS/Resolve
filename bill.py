@@ -18,6 +18,7 @@ class Bill:
     apikey_header = f"api_key={API_KEY}"
 
     types_of_sort = {
+    "Relevancy": None,
     "Latest Action Taken": None,
     "Latest Update": "updateDate+desc",
     "Earliest Update": "updateDate+asc",
@@ -80,7 +81,6 @@ class Bill:
     def getInfo(self):
         data = requests.get(f"{self.base_url}/{self.congress}/{self.type}/{self.number}?{self.apikey_header}").json()
         bill = data.get('bill')
-        print(bill)
 
         if not bill:
             raise exceptions.NoBill(f"Bill {self.type.upper()} {self.number} does not exist")
@@ -110,16 +110,29 @@ class Bill:
         for title in data['titles']:
             titles.append(title['title'])
 
+        titles = [*set(titles)] #removes duplicates
+        print(titles)
         return titles
+
+
+    @staticmethod
+    def getShortestTitle(titles):
+        shorttestTitle = titles[0]
+
+        for title in titles:
+            if len(title) < len(shorttestTitle):
+                shorttestTitle = title
+
+        return shorttestTitle
 
 
     def getTitle(self):
         titles = self.getTitles()
 
         if titles:
-            lastTitle = titles[len(titles) - 1]
-            lastTitle = self.pruneText(lastTitle)
-            return lastTitle
+            shorttestTitle = self.getShortestTitle(titles)
+            shorttestTitle = self.pruneText(shorttestTitle)
+            return shorttestTitle
 
         else:
             return None
@@ -145,7 +158,7 @@ class Bill:
     #Removes most non ASCII chars from text
     @staticmethod
     def pruneText(text):
-        removers = ["_", "`", "''.", "&lt;DOC&gt;", "&lt;all&gt;", "&nbsp;"]
+        removers = ["_", "`", "''.", "&lt;DOC&gt;", "&lt;all&gt;", "&nbsp;", "$"]
         text = removeTags(text)
         text = removeBrackets(text)
         for remover in removers:
@@ -156,10 +169,11 @@ class Bill:
 
 
     #not combined with prune text as it is only used for the text of the bill
-    def cleanRawText(self, textRaw):
+    @classmethod
+    def cleanRawText(cls, textRaw):
         def getStartingIndex(textList):
             for line in textList:
-                if not "An Act" in line and not "a bill" in line.lower() and not "AN ACT" in line and not "RESOLUTION" in line:
+                if not "An Act" in line and not "a bill" in line.lower() and not "AN ACT" in line and not "RESOLUTION" in line and not "Concurrent Resolution" in line:
                     continue
                 return textList.index(line) + 1
             else:
@@ -184,7 +198,7 @@ class Bill:
         textList = removeAll(textList, [''])
 
         for section in textList:
-            textList[textList.index(section)] = self.pruneText(section)
+            textList[textList.index(section)] = cls.pruneText(section)
 
         startingIndex = getStartingIndex(textList)
         finishingIndex = getFinishingIndex(textList)
@@ -265,6 +279,41 @@ class Bill:
         return bills
 
 
+    def generateBrief(self):
+        text = self.getText()
+
+        if not text:
+            raise Exception("Text is not avaiable for this bill")
+
+        model = "text-davinci-002"
+        beginning = "Extract and list three of the most important key takeaways from the following text: \n\n"
+        ending = "\nList:"
+        kwargs = {
+            "model": "text-davinci-002",
+            "prompt": beginning + text + ending,
+            "temperature": 0.7,
+            "max_tokens": 256,
+            "top_p": 1,
+            "frequency_penalty": 0,
+            "presence_penalty": 0,
+        }
+
+
+        try:
+            response = openai.Completion.create(**kwargs)
+        except openai.error.InvalidRequestError:
+            raise Exception("Text is too large to be summarized")
+
+        print(response)
+
+        choice = response['choices'][0]['text']
+        if "\n" in choice:
+            choiceList = choice.split("\n")
+        else:
+            choiceList = [choice]
+        return choiceList
+
+
     def generateSummary(self):
         text = self.getText()
 
@@ -272,42 +321,28 @@ class Bill:
             raise Exception("Text is not avaiable for this bill.")
 
         tuned = True
-        model = "curie:ft-personal-2022-10-23-09-13-31"
-        beginning = "Write a succinct paragraph summarizing only the important key points of the following text: \n\n"
-        ending = "\nSummary:"
-        prompt = beginning + text + ending
-        temperature = 0.7
-        max_tokens = 256
-        top_p = 1
-        frequency_penalty = 1
-        presence_penalty = 0
-        stop = ["\n"]
+        beginning = "With short, crisp sentences, write a brief, succinct summary of the following text: \n\n"
+        ending = "\n\nSummary:"
+
+        kwargs = {
+            "model": "curie:ft-personal-2022-10-23-09-13-31",
+            "prompt": beginning + text + ending,
+            "temperature": 0.65,
+            "max_tokens": 512,
+            "top_p": 1,
+            "frequency_penalty": 0.5,
+            "presence_penalty": 0,
+            "stop": ["\n"]
+        }
 
         try:
-            response = openai.Completion.create(
-                model = model,
-                prompt = prompt,
-                temperature = temperature,
-                max_tokens = max_tokens,
-                top_p = top_p,
-                frequency_penalty = frequency_penalty,
-                presence_penalty = presence_penalty,
-                stop=stop
-            )
-
+            response = openai.Completion.create(**kwargs)
         except openai.error.InvalidRequestError:
             tuned = False
             try:
-                response = openai.Completion.create(
-                    model="text-davinci-002",
-                    prompt = prompt,
-                    temperature = temperature,
-                    max_tokens = max_tokens * 2,
-                    top_p = top_p,
-                    frequency_penalty = frequency_penalty,
-                    presence_penalty = presence_penalty,
-                )
-
+                kwargs['model'] = "text-davinci-002"
+                kwargs['max_tokens'] = kwargs['max_tokens'] / 2
+                response = openai.Completion.create(**kwargs)
             except openai.error.InvalidRequestError:
                 raise Exception("Text is too large to be summarized")
 

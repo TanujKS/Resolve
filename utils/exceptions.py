@@ -9,3 +9,6 @@ class NoText(Exception):
 
 class RateLimited(Exception):
     pass
+
+class TextTooLarge(Exception):
+    pass
