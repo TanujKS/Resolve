@@ -229,7 +229,7 @@ def buildDataset(limit=None):
 
 if __name__ == "__main__":
     #fetchSummaries("hres")
-    fetchTexts("hres")
+    fetchTexts("hr")
     #pruneData("s")
     #removeDuplicates("hconres")
     #verifyData("sjres")

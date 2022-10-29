@@ -9,13 +9,13 @@ import re
 import shutil
 
 load_dotenv()
-API_KEY = os.getenv("API_KEY")
+CONGRESS_API_KEY = os.getenv("CONGRESS_API_KEY")
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
 class Bill:
     base_url = "https://api.congress.gov/v3/bill"
-    apikey_header = f"api_key={API_KEY}"
+    apikey_header = f"api_key={CONGRESS_API_KEY}"
 
     types_of_sort = {
     "Relevancy": None,
@@ -321,17 +321,17 @@ class Bill:
             raise Exception("Text is not avaiable for this bill.")
 
         tuned = True
-        beginning = "With short, crisp sentences, write a brief, succinct summary of the following text: \n\n"
+        beginning = "Write a concise 6 sentence summary of the following text: \n\n"
         ending = "\n\nSummary:"
 
         kwargs = {
             "model": "curie:ft-personal-2022-10-23-09-13-31",
             "prompt": beginning + text + ending,
-            "temperature": 0.65,
+            "temperature": 0.4,
             "max_tokens": 512,
             "top_p": 1,
-            "frequency_penalty": 0.5,
-            "presence_penalty": 0,
+            "frequency_penalty": 1,
+            "presence_penalty": -1,
             "stop": ["\n"]
         }
 

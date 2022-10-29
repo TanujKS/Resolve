@@ -1,7 +1,8 @@
 import streamlit as st
 from bill import Bill
 import json
-
+from dotenv import load_dotenv
+load_dotenv()
 # with st.sidebar:
 #     st.header("Our Mission")
 #     st.write("With democracy being questioned everyday more and more here in the United States, it is essential that as many are involved with politics as possible.")
