@@ -2,6 +2,8 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.linear_model import LogisticRegression
+from keras.backend import clear_session
+clear_session()
 
 df = pd.read_json("reddit_data/data.json")
 

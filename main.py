@@ -240,12 +240,15 @@ def renderBill(bill, **kwargs):
 
 
 if search_number == 0:
-    renderRecent()
+    try:
+        renderRecent()
+    except Exception as error:
+        st.error(error)
 else:
     try:
         bill = Bill(congress, Bill.types_of_legislation_display[type_of_legislation], search_number)
+
+        bill.title = bill.getTitle()
+        renderBill(bill)
     except Exception as error:
         st.error(error)
-
-    bill.title = bill.getTitle()
-    renderBill(bill)

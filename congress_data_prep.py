@@ -48,7 +48,7 @@ def dump(path, data):
         json.dump(data, file, indent=4)
 
 
-def fetchTexts(type, file="text"):
+def fetchText(type, file="text"):
     bigBills = []
     smallBills = []
 
@@ -82,6 +82,13 @@ def fetchTexts(type, file="text"):
             i += 1
 
         dump(f"{folder}/{type}/{type}_raw_text.json", tuning_data)
+
+
+def fetchTexts():
+    types = [key for key, item in Bill.types_of_legislation.items()]
+    for type in types:
+        print(type, "\n\n\n\n")
+        fetchText(type)
 
 
 def pruneData(type):
@@ -194,6 +201,21 @@ def count():
     print(f"Estimated Price: ${(totalTokens/1000)*0.003}")
 
 
+def findLarge(type):
+    with open(f"{folder}/{type}/{type}_pruned.json") as file:
+        tuning_data = json.load(file)
+        dataset = []
+
+        for data in tuning_data:
+            if not data.get('text'):
+                break
+
+            tokens = len(tokenizer(data['text'])['input_ids'])
+
+            if tokens > 4096:
+                return data
+
+
 def buildDataset(limit=None):
     types = [key for key, item in Bill.types_of_legislation.items()]
     dataset = []
@@ -229,9 +251,12 @@ def buildDataset(limit=None):
 
 if __name__ == "__main__":
     #fetchSummaries("hres")
-    fetchTexts("hr")
+    #fetchTexts("hr")
     #pruneData("s")
     #removeDuplicates("hconres")
     #verifyData("sjres")
     #count()
     #buildDataset()
+    #data = findLarge("hr")
+    #print(data)
+    fetchTexts()

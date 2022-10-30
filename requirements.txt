@@ -4,3 +4,4 @@ python-dotenv
 streamlit
 pandas
 transformers
+keras

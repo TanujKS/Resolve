@@ -7,10 +7,14 @@ from utils.utils import *
 import json
 import re
 import shutil
+from recursive_summary import recursive_summary
+import textwrap
+
 
 load_dotenv()
 CONGRESS_API_KEY = os.getenv("CONGRESS_API_KEY")
 openai.api_key = os.getenv("OPENAI_API_KEY")
+
 
 
 class Bill:
@@ -111,7 +115,7 @@ class Bill:
             titles.append(title['title'])
 
         titles = [*set(titles)] #removes duplicates
-        print(titles)
+
         return titles
 
 
@@ -286,10 +290,10 @@ class Bill:
             raise Exception("Text is not avaiable for this bill")
 
         model = "text-davinci-002"
-        beginning = "Extract and list three of the most important key takeaways from the following text: \n\n"
+        beginning = "Extract and list in detail three of the most important key takeaways from the following text: \n\n"
         ending = "\nList:"
         kwargs = {
-            "model": "text-davinci-002",
+            "model": "text-curie-001",
             "prompt": beginning + text + ending,
             "temperature": 0.7,
             "max_tokens": 256,
@@ -302,7 +306,13 @@ class Bill:
         try:
             response = openai.Completion.create(**kwargs)
         except openai.error.InvalidRequestError:
-            raise Exception("Text is too large to be summarized")
+            #raise Exception("Text is too large to be summarized")
+            kwargs['model'] = "text-davinci-002"
+            try:
+                response = openai.Completion.create(**kwargs)
+            except openai.error.InvalidRequestError:
+                raise exceptions.TextTooLarge("Text is too large to get a brief, try fetching a summary instead")
+
 
         print(response)
 
@@ -323,10 +333,11 @@ class Bill:
         tuned = True
         beginning = "Write a concise 6 sentence summary of the following text: \n\n"
         ending = "\n\nSummary:"
+        fullPrompt = beginning + text + ending
 
         kwargs = {
             "model": "curie:ft-personal-2022-10-23-09-13-31",
-            "prompt": beginning + text + ending,
+            "prompt": fullPrompt,
             "temperature": 0.4,
             "max_tokens": 512,
             "top_p": 1,
@@ -341,19 +352,33 @@ class Bill:
             tuned = False
             try:
                 kwargs['model'] = "text-davinci-002"
-                kwargs['max_tokens'] = kwargs['max_tokens'] / 2
+                #kwargs['max_tokens'] = int(kwargs['max_tokens'] / 2)
                 response = openai.Completion.create(**kwargs)
             except openai.error.InvalidRequestError:
-                raise Exception("Text is too large to be summarized")
+                beginning = "Write a concise 20 word summary of the following bill: \n\n"
+                kwargs['model'] = "text-davinci-002"
+                del kwargs['stop']
+                #response = recursive_summary.summarize(beginning, text, ending, **kwargs)
+                #raise Exception("Text is too large to be summarised")
+                chunks = textwrap.wrap(text, 15000)
+                result = []
+                count = 0
 
+                for chunk in chunks:
+                    count += 1
+                    kwargs['prompt'] = beginning + chunk + ending
+                    summary = recursive_summary.gpt3_completion(**kwargs)
+                    print('\n\n\n', count, 'of', len(chunks), ' - ', summary)
+                    result.append(summary)
 
-        print(response)
+                response = '\n\n'.join(result)
+                return response, tuned
 
+        response = response['choices'][0]['text']
 
-        choice = response['choices'][0]['text']
-        choice = self.pruneText(choice)
+        response = self.pruneText(response)
 
-        return choice, tuned
+        return response, tuned
 
 
 
@@ -362,11 +387,3 @@ class RelatedBill(Bill):
     def from_dict(cls, data):
         bill = cls.from_dict(data)
         bill.relationshipDetails = data['relationshipDetails']
-
-
-if __name__ == "__main__":
-    bill = Bill(117, "hr", 24)
-    print(bill.textURL)
-    print(bill.rawText)
-    print("\n\n")
-    print(bill.text)
