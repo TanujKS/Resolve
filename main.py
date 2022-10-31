@@ -2,6 +2,8 @@ import streamlit as st
 from bill import Bill
 import json
 from dotenv import load_dotenv
+from utils import exceptions
+
 load_dotenv()
 # with st.sidebar:
 #     st.header("Our Mission")
@@ -42,7 +44,7 @@ with col2:
     limit = st.number_input("Results per page", min_value = 1, max_value = 250, value = 20)
     sort_by = st.selectbox(
         'Sort By',
-        (key for key, item in Bill.types_of_sort.items())
+        list(Bill.types_of_sort.keys())
     )
 
 
@@ -63,10 +65,16 @@ with col3:
 
 
 
+def writeSections(sections: dict):
+    for key, item in sections.items():
+        if key != "intro":
+            st.header(key)
 
+        subheader = item.get('subheader')
+        if subheader:
+            st.subheader(subheader)
 
-
-
+        st.write(item.get('text'))
 
 
 def renderRecent():
@@ -96,6 +104,11 @@ def renderRecent():
         key5 += 1
 
 def renderBill(bill, **kwargs):
+    if not getattr(st.session_state, f'{bill.type}_{str(bill.number)}', False):
+        st.session_state[f"{bill.type}_{str(bill.number)}"] = {
+        "feedback_received": False,
+        }
+
     key1 = kwargs.get('key1')
     key2 = kwargs.get('key2')
     key3 = kwargs.get('key3')
@@ -118,26 +131,33 @@ def renderBill(bill, **kwargs):
 
                     st.markdown(f"Number: **{bill.type.upper()} {bill.number}**")
 
+                    st.markdown(f"Introduced on: **{bill.introducedDate}**")
+
+                    st.markdown(f"Originated In: **{bill.originChamber}**")
+
+                    st.markdown("Sponsors:")
+                    for sponsor in bill.sponsors:
+                        st.markdown(f"{spacing}{sponsor['fullName']}")
+
+                    st.markdown(f"Summary: {bill.getSummary()}")
+
                     st.markdown("Also known as:")
                     titles = bill.getTitles()
                     titles.remove(bill.title)
                     for title in titles:
                         st.markdown(f"{spacing}**{title}**")
 
-                    st.markdown(f"Introduced on: **{bill.introducedDate}**")
-
-                    st.markdown(f"Originated In: **{bill.originChamber}**")
+                    st.markdown("#")
+                    st.markdown("#")
 
                     st.markdown(f"Actions:")
                     actions = bill.getActions()
                     for action in actions:
-                        st.markdown(f"{spacing}Date: **{action['actionDate']}**")
-                        st.markdown(f"{spacing}**{action['type']}**: **{action['text']}**")
+                        st.markdown(f"{spacing}**{action['actionDate']} {action['type']}**: **{action['text']}**")
                         st.markdown("##")
 
-                    st.markdown("Sponsors:")
-                    for sponsor in bill.sponsors:
-                        st.markdown(f"{spacing}{sponsor['fullName']}")
+
+
 
                 else:
                     st.markdown(f"Congress Session: **{bill.congress}**")
@@ -149,86 +169,104 @@ def renderBill(bill, **kwargs):
 
             with tab2:
                 if st.button("Fetch Text", key=key2):
-                    text = bill.getText()
+                    sections = bill.getSections()
 
-                    if text:
-                        section = []
-                        header = []
-                        subheader = []
-                        textList = text.split()
-
-                        for index in range(0, len(textList)):
-                            word = textList[index]
-
-                            if word.isupper() and (word.startswith("SECTION") or word.startswith("SEC.")):
-                                if section:
-                                    st.write(" ".join(section))
-                                    section = []
-
-                                header.append(word)
-
-                                header.append(textList[index + 1])
-
-                            elif word.isupper() and header:
-                                subheader.append(word)
-
-                            else:
-                                if header:
-                                    st.header(" ".join(header))
-                                    header = []
-
-                                elif subheader:
-                                    st.subheader(" ".join(subheader))
-                                    subheader = []
-
-                                section.append(word)
-                        st.write(" ".join(section))
-
-                    else:
+                    if not sections:
                         st.error("The text of this bill has not yet been made avaiable by Congress.")
 
+                    writeSections(sections)
 
 
             with tab3:
-                summarized = getattr(st.session_state, str(bill.number), False)
+                #user_data = getattr(st.session_state, str(bill.number), None)
+                user_data = st.session_state[f"{bill.type}_{str(bill.number)}"]
+
+                summarized = user_data.get('feedback_received', False)
+                summarized_section = getattr(st.session_state, f"{bill.type}_{str(bill.number)}_section", None)
 
                 summarize_button = st.button("Summarize", key=key3)
 
                 if summarize_button:
-                    st.session_state[bill.number] = False
+                    st.session_state[f"{bill.type}_{str(bill.number)}"]['feedback_received'] = False
 
-                    summary, tuned = bill.generateSummary()
+                    try:
+                        summary = bill.generateSummary()
 
-                    if not tuned:
-                        print('Text was too large to be summarized with a fine-tuned model')
+                        st.write(summary)
 
-                    st.write(summary)
+                        def good_summary_click(bill, completion):
 
-                    def good_summary_click(bill, completion):
+                            data = {
+                            "prompt": bill.getText(),
+                            "completion": completion
+                            }
 
-                        data = {
-                        "prompt": bill.getText(),
-                        "completion": completion
-                        }
+                            with open("congress_data/human_feedback.jsonl", "a") as file:
+                                file.write("\n")
+                                file.write(json.dumps(data))
 
-                        with open("data/human_feedback.jsonl", "a") as file:
-                            file.write("\n")
-                            file.write(json.dumps(data))
+                            number = str(bill.number)
+                            st.session_state[number]["feedback_received"] = True
+                            #st.session_state[number]['feedback_received'] = True
 
-                        number = str(bill.number)
-                        st.session_state[number] = True
+                        st.button("I Like This!", on_click=good_summary_click, args=(bill, summary), key=key4)
 
-                    st.button("I Like This!", on_click=good_summary_click, args=(bill, summary), key=key4)
+                    except exceptions.TextTooLarge:
+                        st.write("Bill is too large to summarize entirely, please select a section to summarize instead")
 
+                        section = st.selectbox(
+                            'Select a section too summarize',
+                            (content.get('subheader', section) for section, content in bill.getSections().items()),
+                            key=f"{bill.type}_{str(bill.number)}_section"
+                            )
 
-                if getattr(st.session_state, str(bill.number), False):
+                        #st.session_state[str(bill.number)]['summarized_section'] = section
+
+                if summarized:
                     st.subheader("Thanks for your feedback!")
 
+                if summarized_section:
+                    st.write(summarized_section)
+
+                    st.markdown("#")
+
+                    sections = bill.getSections()
+                    section = bill.getSectionFromSubheader(summarized_section, sections=sections)
+                    st.write(bill.generateSummary(text=sections[section]['text']))
+
             with tab4:
-                 if st.button("Get Brief", key=key5):
-                     key_points = bill.generateBrief()
-                     for point in key_points:
-                         st.write(point)
+                briefed_section = getattr(st.session_state, f"{bill.type}_{str(bill.number)}_brief", None)
+
+                brief_button = st.button("Get Brief", key=key5)
+
+                if brief_button:
+
+                    try:
+                        key_points = bill.generateBrief()
+
+                        for point in key_points:
+                            st.write(point)
+                    except exceptions.TextTooLarge:
+                        st.write("Bill is too large to breif entirely, please select a section to brief instead")
+
+                        brief = st.selectbox(
+                        "Select a section too brief",
+                        (content.get('subheader', section) for section, content in bill.getSections().items()),
+                        key=f"{bill.type}_{str(bill.number)}_brief"
+                        )
+
+
+
+                if briefed_section:
+                    st.write(briefed_section)
+                    st.markdown("#")
+
+                    sections = bill.getSections()
+                    section = bill.getSectionFromSubheader(briefed_section, sections=sections)
+                    key_points = bill.generateBrief(text=sections[section]['text'])
+
+                    for point in key_points:
+                        st.write(point)
 
     except Exception as error:
         st.error(error)

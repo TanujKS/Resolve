@@ -8,7 +8,6 @@ import json
 import re
 import shutil
 from recursive_summary import recursive_summary
-import textwrap
 
 
 load_dotenv()
@@ -231,13 +230,64 @@ class Bill:
     def getText(self):
         rawText = self.getRawText()
 
-        if rawText:
-            text = self.pruneText(rawText)
-            text = self.cleanRawText(text)
-            return text
-
-        else:
+        if not rawText:
             return None
+
+        text = self.pruneText(rawText)
+        text = self.cleanRawText(text)
+        return text
+
+
+    def getSectionFromSubheader(self, target_subheader, sections=None):
+        if not sections:
+            sections = self.getSections()
+
+        for section, content in sections.items():
+            subheader = content.get('subheader')
+            if subheader == target_subheader:
+                return section
+
+
+    def getSections(self):
+        #Returns the text of the bill broken down into a Dictionary of sections, with subheaders and text
+
+        text = self.getText()
+
+        if not text:
+            return None
+
+
+        def split(delimiters, string, maxsplit=0):
+            regex_pattern = '|'.join(map(re.escape, delimiters))
+            return re.split(regex_pattern, string, maxsplit)
+
+        def getFirstWord(line):
+            for word in line:
+                if word:
+                    return word
+
+
+        textList = split(["SECTION", "SEC."], text)
+
+        sections = {}
+
+        for section in textList:
+            sectionList = section.splitlines()
+            if sectionList[0] == '':
+                sectionList[0] = "Introduction"
+
+            firstLine = sectionList[0].split()
+            sectionList.pop(0)
+
+
+            firstWord = firstLine[0]
+            firstLine.pop(0)
+
+            sections[f'Section {firstWord}'] = {}
+            sections[list(sections.keys())[-1]]['subheader'] = " ".join(firstLine)
+            sections[list(sections.keys())[-1]]['text'] = " ".join(sectionList)
+
+        return sections
 
 
     def getSummary(self):
@@ -283,19 +333,20 @@ class Bill:
         return bills
 
 
-    def generateBrief(self):
-        text = self.getText()
+    def generateBrief(self, text=None):
+        if not text:
+            text = self.getText()
 
         if not text:
             raise Exception("Text is not avaiable for this bill")
 
         model = "text-davinci-002"
-        beginning = "Extract and list in detail three of the most important key takeaways from the following text: \n\n"
+        beginning = "Imagine you are a smart politican explaining the following bill to an uneducated citizen by listing 3 of the most important takeaways from the following text: \n\n"
         ending = "\nList:"
         kwargs = {
             "model": "text-curie-001",
             "prompt": beginning + text + ending,
-            "temperature": 0.7,
+            "temperature": 0.3,
             "max_tokens": 256,
             "top_p": 1,
             "frequency_penalty": 0,
@@ -306,13 +357,13 @@ class Bill:
         try:
             response = openai.Completion.create(**kwargs)
         except openai.error.InvalidRequestError:
-            #raise Exception("Text is too large to be summarized")
             kwargs['model'] = "text-davinci-002"
             try:
                 response = openai.Completion.create(**kwargs)
             except openai.error.InvalidRequestError:
                 raise exceptions.TextTooLarge("Text is too large to get a brief, try fetching a summary instead")
-
+            #    kwargs['prompt'] = beginning + self.generateSummary() + ending
+            #    response = openai.Completion.create(**kwargs)
 
         print(response)
 
@@ -324,61 +375,107 @@ class Bill:
         return choiceList
 
 
-    def generateSummary(self):
-        text = self.getText()
+    def generateSummary(self, text=None):
+        if not text:
+            text = self.getText()
 
         if not text:
             raise Exception("Text is not avaiable for this bill.")
 
-        tuned = True
-        beginning = "Write a concise 6 sentence summary of the following text: \n\n"
+        beginning = "Imagine you are a smart politician tasked with explaining the following bill in a concice 100 word paragraph to an uneducated citizen: \n\n"
         ending = "\n\nSummary:"
         fullPrompt = beginning + text + ending
-
+        price = 0
         kwargs = {
-            "model": "curie:ft-personal-2022-10-23-09-13-31",
             "prompt": fullPrompt,
-            "temperature": 0.4,
+            "temperature": 0.25,
             "max_tokens": 512,
             "top_p": 1,
-            "frequency_penalty": 1,
-            "presence_penalty": -1,
+            "frequency_penalty": 0,
+            "presence_penalty": 0,
             "stop": ["\n"]
         }
+        tokens = getTokens(text, kwargs['max_tokens'])
 
-        try:
-            response = openai.Completion.create(**kwargs)
-        except openai.error.InvalidRequestError:
-            tuned = False
-            try:
-                kwargs['model'] = "text-davinci-002"
-                #kwargs['max_tokens'] = int(kwargs['max_tokens'] / 2)
-                response = openai.Completion.create(**kwargs)
-            except openai.error.InvalidRequestError:
-                beginning = "Write a concise 20 word summary of the following bill: \n\n"
-                kwargs['model'] = "text-davinci-002"
-                del kwargs['stop']
-                #response = recursive_summary.summarize(beginning, text, ending, **kwargs)
-                #raise Exception("Text is too large to be summarised")
-                chunks = textwrap.wrap(text, 15000)
-                result = []
-                count = 0
+        if tokens <= 2049:
+            kwargs["model"] = "curie:ft-personal-2022-10-23-09-13-31"
+            price += getPrice(tokens, model="curie", fineTuned=True)
+        elif tokens >= 2049 and tokens <= 4097:
+            kwargs['model'] = "text-davinci-002"
+            del kwargs['stop']
+            price += getPrice(tokens, model="davinci", fineTuned=False)
 
-                for chunk in chunks:
-                    count += 1
-                    kwargs['prompt'] = beginning + chunk + ending
-                    summary = recursive_summary.gpt3_completion(**kwargs)
-                    print('\n\n\n', count, 'of', len(chunks), ' - ', summary)
-                    result.append(summary)
+        else:
+            sections = self.getSections()
 
-                response = '\n\n'.join(result)
-                return response, tuned
+            if len(list(sections.keys())) > 10:
+                raise exceptions.TextTooLarge("Text is too large to summarize")
+
+            beginning = "Write a concise 20 word summary of the following bill: \n\n"
+            kwargs['model'] = "text-curie-001"
+            del kwargs['stop']
+            count = 0
+
+            for section, content in sections.items():
+                count += 1
+
+                text = content.get('text')
+                if not text:
+                    continue
+
+                tokens = getTokens(text, kwargs['max_tokens'])
+                price += getPrice(tokens, model="curie", fineTuned=False)
+
+                kwargs['prompt'] = beginning + text + ending
+                summary = recursive_summary.gpt3_completion(**kwargs)
+                print('\n\n\n', count, 'of', len(sections.keys()), ' - ', summary)
+                result.append(summary)
+
+            response = '\n\n'.join(result)
+            return response
+
+        response = openai.Completion.create(**kwargs)
+
+        # try:
+        #     response = openai.Completion.create(**kwargs)
+        # except openai.error.InvalidRequestError:
+        #     raise Exception()
+        #     tuned = False
+        #     try:
+        #         kwargs['model'] = "text-davinci-002"
+        #         #kwargs['max_tokens'] = int(kwargs['max_tokens'] / 2)
+        #         response = openai.Completion.create(**kwargs)
+        #     except openai.error.InvalidRequestError:
+        #         beginning = "Write a concise 20 word summary of the following bill: \n\n"
+        #         kwargs['model'] = "text-curie-001"
+        #         del kwargs['stop']
+        #         count = 0
+        #         sections = self.getSections()
+        #         if len(list(sections.keys())) > 10:
+        #             raise exceptions.TextTooLarge("Due to API rate limits, this text is too large to be summarized.")
+        #
+        #         for section, content in sections.items():
+        #             count += 1
+        #
+        #             text = content.get('text')
+        #             if not text:
+        #                 continue
+        #
+        #             kwargs['prompt'] = beginning + text + ending
+        #             summary = recursive_summary.gpt3_completion(**kwargs)
+        #             print('\n\n\n', count, 'of', len(sections.keys()), ' - ', summary)
+        #             result.append(summary)
+        #
+        #         response = '\n\n'.join(result)
+        #         return response, tuned
+        print(response)
 
         response = response['choices'][0]['text']
 
         response = self.pruneText(response)
 
-        return response, tuned
+        print("Price", price)
+        return response
 
 
 
@@ -387,3 +484,8 @@ class RelatedBill(Bill):
     def from_dict(cls, data):
         bill = cls.from_dict(data)
         bill.relationshipDetails = data['relationshipDetails']
+
+if __name__ == "__main__":
+    with open("output", "w+") as file:
+        bill = Bill(117, "hr", 9087)
+        json.dump(bill.getSections(), file, indent=4)

@@ -96,20 +96,28 @@ def fetchData(total, newAuth=False):
         file.write(df.to_json())
 
 
+def removeUnicode(text):
+    text = text.encode("ascii", "ignore")
+    text = text.decode()
+    return text
+
+
 def fromCSV():
-    with open(f'{folder}/reddit_politics.csv', mode='r') as csv_file:
+    with open(f'{folder}/reddit_politics.csv', mode='r', encoding="utf-8") as csv_file:
         csv_reader = csv.DictReader(csv_file)
         data_list = [row for row in csv_reader]
         df = pd.DataFrame.from_records(data_list)
-        df_comments = df[ df['title'] == "Comment"] # Step 1
+        df_comments = df[ df['title'] == "Comment"]
         df = df.drop(df_comments.index, axis=0)
 
+        df['title'] = df['title'].apply(removeUnicode)
 
         print(df.head())
         with open(f"{folder}/data.json", "w+") as file:
             file.write(df.to_json())
 
 
+#def createSoftScores()
 def createSigScores():
     df = pd.read_json(f"{folder}/data.json")
 
@@ -118,12 +126,13 @@ def createSigScores():
     print(bottom_percentile)
 
     for i in range(len(scores)):
-        score = scores[i]
+        #scores[i] = 1
+         score = scores[i]
 
-        if score >= bottom_percentile:
-            scores[i]= 1
-        else:
-            scores[i] = 0
+         if score >= bottom_percentile:
+             scores[i]= 1
+         else:
+             scores[i] = 0
 
     df['sig_scores'] = scores
 
@@ -134,9 +143,10 @@ def createSigScores():
 
 
 def main():
-    fetchData(5000, newAuth=False)
+#    fetchData(5000, newAuth=False)
+    fromCSV()
     createSigScores()
 
 
 if __name__ == "__main__":
-    createSigScores()
+    main()

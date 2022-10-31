@@ -3,6 +3,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.linear_model import LogisticRegression
 from keras.backend import clear_session
+from sklearn.metrics import ConfusionMatrixDisplay
+from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt
 clear_session()
 
 df = pd.read_json("reddit_data/data.json")
@@ -30,8 +33,13 @@ score = classifier.score(x_test, y_test)
 
 print("Accuracy:", score)
 
-x_test = vectorizer.transform(["To establish a post office"])
-#
 y_pred = classifier.predict(x_test)
 #
 print(y_pred)
+cm = confusion_matrix(y_test, y_pred)
+labels = ["Irrelevant", "Relevant"]
+
+disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=labels)
+
+disp.plot(cmap=plt.cm.Blues)
+plt.show()
