@@ -101,16 +101,29 @@ def removeUnicode(text):
     text = text.decode()
     return text
 
+def swap_columns(df, col1, col2):
+    col_list = list(df.columns)
+    x, y = col_list.index(col1), col_list.index(col2)
+    col_list[y], col_list[x] = col_list[x], col_list[y]
+    df = df[col_list]
+    return df
 
 def fromCSV():
     with open(f'{folder}/reddit_politics.csv', mode='r', encoding="utf-8") as csv_file:
         csv_reader = csv.DictReader(csv_file)
+
         data_list = [row for row in csv_reader]
         df = pd.DataFrame.from_records(data_list)
+
         df_comments = df[ df['title'] == "Comment"]
+        df_comments = swap_columns(df_comments, 'title', 'body')
+        df_comments = df_comments.rename(columns={"body": "title", "title": "body"})
+        print(df_comments.head())
         df = df.drop(df_comments.index, axis=0)
 
-        df['title'] = df['title'].apply(removeUnicode)
+        df = pd.concat([df, df_comments])
+        #df['title'] = df['title'].apply(removeUnicode)
+        df = df[['title']]
 
         print(df.head())
         with open(f"{folder}/data.json", "w+") as file:
@@ -122,7 +135,7 @@ def createSigScores():
     df = pd.read_json(f"{folder}/data.json")
 
     scores = df['score'].to_list()
-    bottom_percentile = np.percentile(scores, 20)
+    bottom_percentile = np.percentile(scores, 25)
     print(bottom_percentile)
 
     for i in range(len(scores)):
@@ -145,7 +158,7 @@ def createSigScores():
 def main():
 #    fetchData(5000, newAuth=False)
     fromCSV()
-    createSigScores()
+    #createSigScores()
 
 
 if __name__ == "__main__":

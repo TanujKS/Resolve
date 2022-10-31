@@ -5,25 +5,25 @@ from dotenv import load_dotenv
 from utils import exceptions
 
 load_dotenv()
-# with st.sidebar:
-#     st.header("Our Mission")
-#     st.write("With democracy being questioned everyday more and more here in the United States, it is essential that as many are involved with politics as possible.")
-#
-#     st.header("Bills")
-#     st.write("What are bills?")
-#
-#     st.header("Resolutions")
-#     st.write("What are resolutions?")
+
+
+with st.sidebar:
+    st.header("Our Mission")
+    st.write("With democracy being questioned everyday more and more here in the United States, it is essential that as many are involved with politics as possible. Too many citizens here in the united States are discouraged from participating in politics with all the political jaron and legal language. Resolve aims to solve that problem by using advanced Artifical Intelligence and Machine Learning to explain Congressional bills in language humans can understand.")
+
+    st.header("Congressional Bills")
+    st.subheader("What are congressional bills?")
+    st.write("Bills are a proposal put before a body of Congress. Bills are written by a Representative, then handed over a committee of experts on the topic. It is then voted on with a simple majority and passed to the other branch of Congress which then repeats the process. After passing both the House and the Senate it is put on the President's desk where they can either veto it or pass it as law.")
+    st.write("Tip: Use the 'More Information' button when viewing a bill to see what stage it's currently in!")
+    st.subheader("House Bills (HR) and Senate Bills (S)")
+    st.write("")
+
+
 st.title("Welcome to Resolve")
 
 search_number = st.number_input("Search by Bill Number", min_value = 0, max_value=10000, value=0)
 
-st.write("OR Search by Most Recent")
-
-
-
-
-
+st.write("OR search with queries instead")
 
 
 col1, col2, col3 = st.columns(3)
@@ -131,6 +131,7 @@ def renderBill(bill, **kwargs):
 
                     st.markdown(f"Number: **{bill.type.upper()} {bill.number}**")
 
+
                     st.markdown(f"Introduced on: **{bill.introducedDate}**")
 
                     st.markdown(f"Originated In: **{bill.originChamber}**")
@@ -139,7 +140,7 @@ def renderBill(bill, **kwargs):
                     for sponsor in bill.sponsors:
                         st.markdown(f"{spacing}{sponsor['fullName']}")
 
-                    st.markdown(f"Summary: {bill.getSummary()}")
+                    #st.markdown(f"Summary: {bill.getSummary()}")
 
                     st.markdown("Also known as:")
                     titles = bill.getTitles()
@@ -164,7 +165,8 @@ def renderBill(bill, **kwargs):
 
                     st.markdown(f"Number: **{bill.type.upper()} {bill.number}**")
 
-
+                    if getattr(bill, "latestAction", None):
+                        st.markdown(f"Latest Action: {getattr(bill, 'latestAction')}")
 
 
             with tab2:

@@ -129,6 +129,17 @@ class Bill:
         return shorttestTitle
 
 
+    @staticmethod
+    def getLongestTitle(titles):
+        longestTitle = titles[0]
+
+        for title in titles:
+            if len(title) > len(longestTitle):
+                longestTitle = title
+
+        return longestTitle
+
+
     def getTitle(self):
         titles = self.getTitles()
 
@@ -341,16 +352,16 @@ class Bill:
             raise Exception("Text is not avaiable for this bill")
 
         model = "text-davinci-002"
-        beginning = "Imagine you are a smart politican explaining the following bill to an uneducated citizen by listing 3 of the most important takeaways from the following text: \n\n"
+        beginning = "Imagine you are a smart politican listing and explaining 3 of the most important takeaways from the following text: \n\n"
         ending = "\nList:"
         kwargs = {
             "model": "text-curie-001",
             "prompt": beginning + text + ending,
-            "temperature": 0.3,
+            "temperature": 0.4,
             "max_tokens": 256,
             "top_p": 1,
             "frequency_penalty": 0,
-            "presence_penalty": 0,
+            "presence_penalty": 0
         }
 
 
@@ -382,7 +393,7 @@ class Bill:
         if not text:
             raise Exception("Text is not avaiable for this bill.")
 
-        beginning = "Imagine you are a smart politician tasked with explaining the following bill in a concice 100 word paragraph to an uneducated citizen: \n\n"
+        beginning = "Imagine you are a smart politician explaining the following bill in a concice 100 word paragraph to an uneducated citizen: \n\n"
         ending = "\n\nSummary:"
         fullPrompt = beginning + text + ending
         price = 0
@@ -391,8 +402,8 @@ class Bill:
             "temperature": 0.25,
             "max_tokens": 512,
             "top_p": 1,
-            "frequency_penalty": 0,
-            "presence_penalty": 0,
+            "frequency_penalty": 1,
+            "presence_penalty": -1,
             "stop": ["\n"]
         }
         tokens = getTokens(text, kwargs['max_tokens'])
