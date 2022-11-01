@@ -132,3 +132,5 @@ dmypy.json
 *_data/
 gpt3_logs/
 testmodel*/
+secrets.toml
+*credentials.json

@@ -1,5 +1,7 @@
 import re
 from transformers import GPT2TokenizerFast
+import toml
+
 tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
 
 
@@ -32,7 +34,7 @@ def addPeriod(text):
 def containsNumber(string):
     return any(char.isdgit() for char in string)
 
-    
+
 def getTokens(text, completionTokens):
 
     promptTokens = len(tokenizer(text)['input_ids'])
@@ -62,3 +64,17 @@ def getPrice(tokens, *, model, fineTuned=False):
         models = base_models
 
     return models.get(model) * tokens / 1000
+
+
+
+def json_to_toml(input_file, output_file):
+    output_file = "secrets.toml"
+
+    with open(input_file) as json_file:
+        json_text = json_file.read()
+
+    config = {"textkey": json_text}
+    toml_config = toml.dumps(config)
+
+    with open(output_file, "w") as target:
+        target.write(toml_config)

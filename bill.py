@@ -7,7 +7,6 @@ from utils.utils import *
 import json
 import re
 import shutil
-from recursive_summary import recursive_summary
 import cosine_sim
 
 load_dotenv()
@@ -93,9 +92,9 @@ class Bill:
 
     @classmethod
     def searchBills(cls, query):
-        billNumbers = cosine_sim.search(query)
-        print("nums", billNumbers)
-        bills = [Bill(117, "hr", number) for number in billNumbers]
+        bills = cosine_sim.search(query)
+
+        bills = [Bill(117, bill['type'], bill['number']) for bill in bills]
 
         return bills
 

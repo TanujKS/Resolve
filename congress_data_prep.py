@@ -141,6 +141,20 @@ def pruneData(type):
         file.write(df.to_json())
 
 
+def combine():
+    types = [key for key, item in Bill.types_of_legislation.items()]
+    dfs = []
+    for type in types:
+        df = pd.read_json(f"congress_data/{type}/{type}_pruned.json")
+        dfs.append(df)
+
+    df = pd.concat(dfs)
+    print(df.tail())
+    df.reset_index(inplace=True)
+
+    with open(f"{folder}/data.json", "w+") as file:
+        file.write(df.to_json())
+
 def removeDuplicates(type):
     with open(f"{folder}/{type}/{type}_pruned.json") as file:
         data = json.load(file)
@@ -212,22 +226,7 @@ def count():
     print(f"Estimated Price: ${(totalTokens/1000)*0.003}")
 
 
-def findLarge(type):
-    with open(f"{folder}/{type}/{type}_pruned.json") as file:
-        tuning_data = json.load(file)
-        dataset = []
-
-        for data in tuning_data:
-            if not data.get('text'):
-                break
-
-            tokens = len(tokenizer(data['text'])['input_ids'])
-
-            if tokens > 4096:
-                return data
-
-
-def buildDataset(limit=None):
+def buildTuningDataset(limit=None):
     types = [key for key, item in Bill.types_of_legislation.items()]
     dataset = []
 
@@ -263,8 +262,8 @@ def buildDataset(limit=None):
 if __name__ == "__main__":
     #fetchSummaries("hres")
     #fetchTexts("hr")
-    pruneAllData()
-    
+    #pruneAllData()
+    combine()
     #pruneData("hr")
     #removeDuplicates("hconres")
     #verifyData("sjres")
