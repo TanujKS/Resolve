@@ -134,3 +134,4 @@ gpt3_logs/
 testmodel*/
 secrets.toml
 *credentials.json
+bill_embeddings.pkl

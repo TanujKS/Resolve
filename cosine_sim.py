@@ -12,6 +12,9 @@ import streamlit as st
 import json
 
 #folder = "reddit_data"
+key_dict = json.loads(st.secrets["textkey"])
+cred = credentials.Certificate(key_dict)
+firebase_admin.initialize_app(cred)
 
 def getAverage(data):
     if not data:
@@ -86,10 +89,6 @@ def createBillModel(embedding_path):
 
 
 def remoteRedditModel():
-    key_dict = json.loads(st.secrets["textkey"])
-    cred = credentials.Certificate(key_dict)
-    firebase_admin.initialize_app(cred)
-
     bucket = storage.bucket("resolve-87f2f.appspot.com")
 
     blob = bucket.blob("reddit_embeddings.pkl")
@@ -98,10 +97,6 @@ def remoteRedditModel():
     print("Downloaded")
 
 def remoteBillModel():
-     key_dict = json.loads(st.secrets["textkey"])
-     cred = credentials.Certificate(key_dict)
-     firebase_admin.initialize_app(cred)
-
      bucket = storage.bucket("resolve-87f2f.appspot.com")
 
      blob = bucket.blob("bill_embeddings.pkl")
