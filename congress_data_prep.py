@@ -3,6 +3,7 @@ from bill import Bill
 from utils import utils
 from utils import exceptions
 
+import pandas as pd
 import requests
 import os
 import shutil
@@ -91,6 +92,13 @@ def fetchTexts():
         fetchText(type)
 
 
+def pruneAllData():
+    types = [key for key, item in Bill.types_of_legislation.items()]
+    for type in types:
+        print(type, "\n\n")
+        pruneData(type)
+
+
 def pruneData(type):
     src = f"{folder}/{type}/{type}_raw_text.json"
     dest = f"{folder}/{type}/{type}_pruned.json"
@@ -123,11 +131,14 @@ def pruneData(type):
                 if key == "text":
                     data['text'] = Bill.cleanRawText(data['text'])
 
-
+            data['id'] = data['number']
+            data['type'] = type
             pruned_data.append(data)
 
+    df = pd.DataFrame.from_records(pruned_data)
+
     with open(dest, "w+") as file:
-        json.dump(pruned_data, file, indent=4)
+        file.write(df.to_json())
 
 
 def removeDuplicates(type):
@@ -252,11 +263,13 @@ def buildDataset(limit=None):
 if __name__ == "__main__":
     #fetchSummaries("hres")
     #fetchTexts("hr")
-    #pruneData("s")
+    pruneAllData()
+    
+    #pruneData("hr")
     #removeDuplicates("hconres")
     #verifyData("sjres")
     #count()
     #buildDataset()
     #data = findLarge("hr")
     #print(data)
-    fetchTexts()
+    #fetchTexts()

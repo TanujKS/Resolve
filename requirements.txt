@@ -3,5 +3,6 @@ requests
 python-dotenv
 streamlit
 pandas
+sentence-transformers
+scikit-learn
 transformers
-keras

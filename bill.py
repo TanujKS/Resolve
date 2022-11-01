@@ -8,7 +8,7 @@ import json
 import re
 import shutil
 from recursive_summary import recursive_summary
-
+import cosine_sim
 
 load_dotenv()
 CONGRESS_API_KEY = os.getenv("CONGRESS_API_KEY")
@@ -21,8 +21,8 @@ class Bill:
     apikey_header = f"api_key={CONGRESS_API_KEY}"
 
     types_of_sort = {
-    "Relevancy": None,
     "Latest Action Taken": None,
+    "Relevancy": None,
     "Latest Update": "updateDate+desc",
     "Earliest Update": "updateDate+asc",
     }
@@ -70,6 +70,37 @@ class Bill:
 
 
     @classmethod
+    def relevantBills(cls, congress, type, **kwargs):
+        model, sentences, sentence_embeddings = cosine_sim.createRedditModel("reddit_data/post_embeddings.pkl", "reddit_data/data.json")
+
+        bills = cls.recentBills(congress, type, **kwargs)
+
+        rankedBills = {}
+        for bill in bills:
+            relevancy = cosine_sim.getRelevancy(bill.title, model=model, sentence_embeddings=sentence_embeddings)
+            rankedBills[bill.number] = relevancy
+
+
+        rankedBills = {k: v for k, v in sorted(rankedBills.items(), key=lambda x: x[1], reverse=True)}
+        print(rankedBills)
+
+        bills = [Bill(congress, type, number) for number in rankedBills]
+
+        print(rankedBills[list(rankedBills.keys())[0]])
+
+        return bills
+
+
+    @classmethod
+    def searchBills(cls, query):
+        billNumbers = cosine_sim.search(query)
+        print("nums", billNumbers)
+        bills = [Bill(117, "hr", number) for number in billNumbers]
+
+        return bills
+
+
+    @classmethod
     def recentBills(cls, congress, type, **kwargs):
         data = requests.get(f"{cls.base_url}/{congress}/{type}?{cls.apikey_header}&limit={kwargs.get('limit', 20)}&offset={kwargs.get('offset', 0)}&sort={kwargs.get('sort', None)}").json()
         recentBills = data.get('bills')
@@ -78,6 +109,7 @@ class Bill:
             raise Exception(data['error'])
 
         bills = [Bill.from_dict(bill) for bill in recentBills]
+        print(bills)
         return bills
 
 
@@ -172,7 +204,7 @@ class Bill:
     #Removes most non ASCII chars from text
     @staticmethod
     def pruneText(text):
-        removers = ["_", "`", "''.", "&lt;DOC&gt;", "&lt;all&gt;", "&nbsp;", "$"]
+        removers = ["_", "`", "''.", "&lt;DOC&gt;", "&lt;all&gt;", "&nbsp;", "$", "###"]
         text = removeTags(text)
         text = removeBrackets(text)
         for remover in removers:
@@ -352,7 +384,7 @@ class Bill:
             raise Exception("Text is not avaiable for this bill")
 
         model = "text-davinci-002"
-        beginning = "Imagine you are a smart politican listing and explaining 3 of the most important takeaways from the following text: \n\n"
+        beginning = "Imagine you are a smart politican listing and explaining in detail 3 of the most important takeaways from the following text: \n\n"
         ending = "\nList:"
         kwargs = {
             "model": "text-curie-001",
@@ -373,8 +405,6 @@ class Bill:
                 response = openai.Completion.create(**kwargs)
             except openai.error.InvalidRequestError:
                 raise exceptions.TextTooLarge("Text is too large to get a brief, try fetching a summary instead")
-            #    kwargs['prompt'] = beginning + self.generateSummary() + ending
-            #    response = openai.Completion.create(**kwargs)
 
         print(response)
 
@@ -393,27 +423,26 @@ class Bill:
         if not text:
             raise Exception("Text is not avaiable for this bill.")
 
-        beginning = "Imagine you are a smart politician explaining the following bill in a concice 100 word paragraph to an uneducated citizen: \n\n"
-        ending = "\n\nSummary:"
+        beginning = "Summarize the following bill in detail: \n\n"
+        ending = "\n\Summary:"
         fullPrompt = beginning + text + ending
         price = 0
         kwargs = {
             "prompt": fullPrompt,
-            "temperature": 0.25,
-            "max_tokens": 512,
+            "temperature": 0.2,
+            "max_tokens": 300,
             "top_p": 1,
             "frequency_penalty": 1,
             "presence_penalty": -1,
-            "stop": ["\n"]
         }
-        tokens = getTokens(text, kwargs['max_tokens'])
+        tokens = getTokens(fullPrompt, kwargs['max_tokens'])
 
         if tokens <= 2049:
-            kwargs["model"] = "curie:ft-personal-2022-10-23-09-13-31"
+            #kwargs["model"] = "curie:ft-personal-2022-10-23-09-13-31"
+            kwargs['model'] = 'text-curie-001'
             price += getPrice(tokens, model="curie", fineTuned=True)
         elif tokens >= 2049 and tokens <= 4097:
             kwargs['model'] = "text-davinci-002"
-            del kwargs['stop']
             price += getPrice(tokens, model="davinci", fineTuned=False)
 
         else:
@@ -424,8 +453,8 @@ class Bill:
 
             beginning = "Write a concise 20 word summary of the following bill: \n\n"
             kwargs['model'] = "text-curie-001"
-            del kwargs['stop']
             count = 0
+            result = []
 
             for section, content in sections.items():
                 count += 1
@@ -434,11 +463,18 @@ class Bill:
                 if not text:
                     continue
 
-                tokens = getTokens(text, kwargs['max_tokens'])
+                kwargs['prompt'] = beginning + text + ending
+
+                tokens = getTokens(kwargs['prompt'], kwargs['max_tokens'])
+                if tokens > 2049:
+                    continue
+
                 price += getPrice(tokens, model="curie", fineTuned=False)
 
-                kwargs['prompt'] = beginning + text + ending
-                summary = recursive_summary.gpt3_completion(**kwargs)
+
+                summary = openai.Completion.create(**kwargs)
+                summary = summary['choices'][0]['text']
+                summary = self.pruneText(summary)
                 print('\n\n\n', count, 'of', len(sections.keys()), ' - ', summary)
                 result.append(summary)
 
@@ -447,38 +483,6 @@ class Bill:
 
         response = openai.Completion.create(**kwargs)
 
-        # try:
-        #     response = openai.Completion.create(**kwargs)
-        # except openai.error.InvalidRequestError:
-        #     raise Exception()
-        #     tuned = False
-        #     try:
-        #         kwargs['model'] = "text-davinci-002"
-        #         #kwargs['max_tokens'] = int(kwargs['max_tokens'] / 2)
-        #         response = openai.Completion.create(**kwargs)
-        #     except openai.error.InvalidRequestError:
-        #         beginning = "Write a concise 20 word summary of the following bill: \n\n"
-        #         kwargs['model'] = "text-curie-001"
-        #         del kwargs['stop']
-        #         count = 0
-        #         sections = self.getSections()
-        #         if len(list(sections.keys())) > 10:
-        #             raise exceptions.TextTooLarge("Due to API rate limits, this text is too large to be summarized.")
-        #
-        #         for section, content in sections.items():
-        #             count += 1
-        #
-        #             text = content.get('text')
-        #             if not text:
-        #                 continue
-        #
-        #             kwargs['prompt'] = beginning + text + ending
-        #             summary = recursive_summary.gpt3_completion(**kwargs)
-        #             print('\n\n\n', count, 'of', len(sections.keys()), ' - ', summary)
-        #             result.append(summary)
-        #
-        #         response = '\n\n'.join(result)
-        #         return response, tuned
         print(response)
 
         response = response['choices'][0]['text']

@@ -36,7 +36,6 @@ def writeAuthToken(token):
 
 
 def df_from_response(data_list, res):
-    # loop through each post pulled from res and append to df
     count = 0
     for post in res['data']['children']:
         data_list.append({
@@ -53,8 +52,14 @@ def df_from_response(data_list, res):
     return data_list, count
 
 
-def fetchData(total, newAuth=False):
+def saveDf(df, path):
+    with open(f"{folder}/data.json", "w+") as file:
+        file.write(df.to_json())
+
+
+def fetchData(sub, total, newAuth=False):
     print("New Auth:", newAuth)
+
     if newAuth:
         token = getAuthToken()
         writeAuthToken(token)
@@ -69,10 +74,12 @@ def fetchData(total, newAuth=False):
 
     for i in range(totalIters):
         # make request
-        res = requests.get("https://oauth.reddit.com/r/Politics/top", headers=headers, params=params)
+        res = requests.get(f"https://oauth.reddit.com/r/{sub}", headers=headers, params=params)
         #print(res.text)
         res = res.json()
 
+        if not res['data'].get('children'):
+            break
 
         data_list, count = df_from_response(data_list, res)
         row = data_list[len(data_list)-1]
@@ -86,20 +93,17 @@ def fetchData(total, newAuth=False):
         print(f"Total Entries: {len(data_list)} entries")
         print("\n")
 
+
     print("Total Entries:", len(data_list))
 
     df = pd.DataFrame.from_records(data_list)
+    df = df[['title']]
+    df = df.rename(columns={"title": "text"})
 
     print(df.head())
 
-    with open(f"{folder}/data.json", "w+") as file:
-        file.write(df.to_json())
+    return df
 
-
-def removeUnicode(text):
-    text = text.encode("ascii", "ignore")
-    text = text.decode()
-    return text
 
 def swap_columns(df, col1, col2):
     col_list = list(df.columns)
@@ -108,7 +112,8 @@ def swap_columns(df, col1, col2):
     df = df[col_list]
     return df
 
-def fromCSV():
+
+def fromCSV(outfile):
     with open(f'{folder}/reddit_politics.csv', mode='r', encoding="utf-8") as csv_file:
         csv_reader = csv.DictReader(csv_file)
 
@@ -126,40 +131,14 @@ def fromCSV():
         df = df[['title']]
 
         print(df.head())
-        with open(f"{folder}/data.json", "w+") as file:
+        with open(f"{folder}/{outfile}", "w+") as file:
             file.write(df.to_json())
 
 
-#def createSoftScores()
-def createSigScores():
-    df = pd.read_json(f"{folder}/data.json")
-
-    scores = df['score'].to_list()
-    bottom_percentile = np.percentile(scores, 25)
-    print(bottom_percentile)
-
-    for i in range(len(scores)):
-        #scores[i] = 1
-         score = scores[i]
-
-         if score >= bottom_percentile:
-             scores[i]= 1
-         else:
-             scores[i] = 0
-
-    df['sig_scores'] = scores
-
-    print(df.head())
-
-    with open(f"{folder}/data.json", "w+") as file:
-        file.write(df.to_json())
-
-
-def main():
-#    fetchData(5000, newAuth=False)
-    fromCSV()
-    #createSigScores()
-
 
 if __name__ == "__main__":
-    main()
+    df1 = fetchData("Politics/top", 5000)
+    df2 = fetchData("Politics/hot", 5000)
+    df = pd.concat([df1, df2])
+    df.reset_index(inplace=True)
+    saveDf(df, f"{folder}/data.json")

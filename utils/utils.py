@@ -29,6 +29,10 @@ def addPeriod(text):
     return text
 
 
+def containsNumber(string):
+    return any(char.isdgit() for char in string)
+
+    
 def getTokens(text, completionTokens):
 
     promptTokens = len(tokenizer(text)['input_ids'])

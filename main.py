@@ -7,23 +7,39 @@ from utils import exceptions
 load_dotenv()
 
 
+if 'offset' not in st.session_state:
+        st.session_state.offset = 0
+
+
+
+
 with st.sidebar:
     st.header("Our Mission")
-    st.write("With democracy being questioned everyday more and more here in the United States, it is essential that as many are involved with politics as possible. Too many citizens here in the united States are discouraged from participating in politics with all the political jaron and legal language. Resolve aims to solve that problem by using advanced Artifical Intelligence and Machine Learning to explain Congressional bills in language humans can understand.")
+    st.write("Too many citizens here in the United States are discouraged from participating in politics with all the political jargon and legal language. Resolve aims to solve that problem by using advanced Artifical Intelligence and Machine Learning to explain Congressional bills in language humans can understand.")
 
     st.header("Congressional Bills")
-    st.subheader("What are congressional bills?")
-    st.write("Bills are a proposal put before a body of Congress. Bills are written by a Representative, then handed over a committee of experts on the topic. It is then voted on with a simple majority and passed to the other branch of Congress which then repeats the process. After passing both the House and the Senate it is put on the President's desk where they can either veto it or pass it as law.")
+    st.subheader("What are Congressional bills?")
+    st.write("Bills are a proposal put before a body of Congress. Bills are written by a Representative, then handed over a committee of experts on the topic. It is then voted on with a simple majority and passed to the other branch of Congress which then repeats the process. After passing both the House and the Senate it is put on the President's desk where they can either veto it or pass it as law. Bills are denoted by the House they originated in, such as HR for House Resolutions and S for Senate Resolutions")
     st.write("Tip: Use the 'More Information' button when viewing a bill to see what stage it's currently in!")
-    st.subheader("House Bills (HR) and Senate Bills (S)")
-    st.write("")
+
+    st.subheader("What are Joint Resolutions?")
+    st.write("Joint resolutions are very similar to bills, but are generally used for specific matters or amendments to the Constitution, where they do not require the signature of the President if they have a 2/3s vote from both Houses. Joint Resolutions are denoted by the house they originated in followed by JRES (Joint RESolution)")
+
+    st.subheader("What are Concurrent Resolutions?")
+    st.write("Concurrent resolutions require approval from both Houses but do not require the Signature of the President as they do not have the effect of the law. They are mainly used to convey the sentiment, views, or beliefs of Congress as a whole. Concurrent resolutions are denoted by the house they originated in followed by CONRES (CONcurrent RESolution)")
+
+    st.subheader("What are Simple Resolutions?")
+    st.write("Simple resolutions is a proposal only pertaining to one branch of Congress. It does not require the approval of the other House or the President as it does not have the force of law. They are generally used to express the sentiment, views, or beleifs of a single House. Simple resolutions are denoted as the House they pertain too followed by RES (RESolution)")
+
 
 
 st.title("Welcome to Resolve")
 
-search_number = st.number_input("Search by Bill Number", min_value = 0, max_value=10000, value=0)
 
-st.write("OR search with queries instead")
+
+query = st.text_input("Search with keywords")
+
+st.write("OR search all bills instead")
 
 
 col1, col2, col3 = st.columns(3)
@@ -65,6 +81,8 @@ with col3:
 
 
 
+
+
 def writeSections(sections: dict):
     for key, item in sections.items():
         if key != "intro":
@@ -77,25 +95,37 @@ def writeSections(sections: dict):
         st.write(item.get('text'))
 
 
-def renderRecent():
+@st.cache(suppress_st_warning=True, allow_output_mutation=True, show_spinner=False)
+def renderSearch(query):
+    searchedBills = Bill.searchBills(query)
+    return searchedBills
+
+
+@st.cache(suppress_st_warning=True, allow_output_mutation=True, show_spinner=False)
+def renderRelevant(congress, type_of_legislation, **kwargs):
+    relevantBills = Bill.relevantBills(congress, Bill.types_of_legislation_display[type_of_legislation], **kwargs)
+
+    return relevantBills
+
+
+def renderRecent(congress, type_of_legislation, **kwargs):
+    recentBills = Bill.recentBills(congress, Bill.types_of_legislation_display[type_of_legislation], **kwargs)
+
+    renderBills(recentBills)
+
+
+def renderBills(bills):
     if 'offset' not in st.session_state:
         st.session_state.offset = 0
 
 
-    try:
-        recentBills = Bill.recentBills(congress, Bill.types_of_legislation_display[type_of_legislation], limit = limit, offset = st.session_state.offset, sort=Bill.types_of_sort[sort_by])
-    except Exception as error:
-        st.error(error)
-        st.stop()
-
-
     key1 = 0
-    key2 = len(recentBills) * (2**0)
-    key3 = len(recentBills) * (2**1)
-    key4 = len(recentBills) * (2**2)
-    key5 = len(recentBills) * (2**3)
+    key2 = len(bills) * (2**0)
+    key3 = len(bills) * (2**1)
+    key4 = len(bills) * (2**2)
+    key5 = len(bills) * (2**3)
 
-    for bill in recentBills:
+    for bill in bills:
         renderBill(bill, key1=key1, key2=key2, key3=key3, key4=key4, key5=key5)
         key1 += 1
         key2 += 1
@@ -103,7 +133,11 @@ def renderRecent():
         key4 += 1
         key5 += 1
 
+
 def renderBill(bill, **kwargs):
+    if not getattr(bill, "title", None):
+        bill.title = bill.getTitle()
+
     if not getattr(st.session_state, f'{bill.type}_{str(bill.number)}', False):
         st.session_state[f"{bill.type}_{str(bill.number)}"] = {
         "feedback_received": False,
@@ -127,46 +161,52 @@ def renderBill(bill, **kwargs):
                 if st.button("More Information", key=key1):
                     bill.getInfo()
 
-                    st.markdown(f"Congress Session: **{bill.congress}**")
+                    st.markdown(f"**Congress Session:** {bill.congress}")
 
-                    st.markdown(f"Number: **{bill.type.upper()} {bill.number}**")
+                    st.markdown(f"**Number:** {bill.type.upper()} {bill.number}")
+
+                    actions = bill.getActions()
+                    action = actions[0]
+                    st.markdown(f"**Latest Action:** {action['actionDate']} {action['type']}: {action['text']}")
 
 
-                    st.markdown(f"Introduced on: **{bill.introducedDate}**")
+                    st.markdown(f"**Introduced on:** {bill.introducedDate}")
 
-                    st.markdown(f"Originated In: **{bill.originChamber}**")
+                    st.markdown(f"**Originated In:** {bill.originChamber}")
 
-                    st.markdown("Sponsors:")
+                    st.markdown("**Sponsors:**")
                     for sponsor in bill.sponsors:
                         st.markdown(f"{spacing}{sponsor['fullName']}")
 
                     #st.markdown(f"Summary: {bill.getSummary()}")
 
-                    st.markdown("Also known as:")
+                    st.markdown("#")
+
+                    st.markdown("**Also known as:**")
                     titles = bill.getTitles()
                     titles.remove(bill.title)
                     for title in titles:
-                        st.markdown(f"{spacing}**{title}**")
+                        st.markdown(f"{spacing}{title}")
 
                     st.markdown("#")
                     st.markdown("#")
 
-                    st.markdown(f"Actions:")
-                    actions = bill.getActions()
+                    st.markdown("**Actions:**")
                     for action in actions:
-                        st.markdown(f"{spacing}**{action['actionDate']} {action['type']}**: **{action['text']}**")
-                        st.markdown("##")
+                        st.markdown(f"{spacing}{action['actionDate']} {action['type']}: {action['text']}")
+                        st.markdown("#")
 
 
 
 
                 else:
-                    st.markdown(f"Congress Session: **{bill.congress}**")
+                    st.markdown(f"**Congress Session**: {bill.congress}")
 
-                    st.markdown(f"Number: **{bill.type.upper()} {bill.number}**")
+                    st.markdown(f"**Number:** {bill.type.upper()} {bill.number}")
 
-                    if getattr(bill, "latestAction", None):
-                        st.markdown(f"Latest Action: {getattr(bill, 'latestAction')}")
+                    action = getattr(bill, 'latestAction', None)
+                    if action:
+                        st.markdown(f"**Latest Action:** {action['actionDate']}: {action['text']}")
 
 
             with tab2:
@@ -208,7 +248,7 @@ def renderBill(bill, **kwargs):
                                 file.write(json.dumps(data))
 
                             number = str(bill.number)
-                            st.session_state[number]["feedback_received"] = True
+                            st.session_state[f"{bill.type}_{str(bill.number)}"]['feedback_received'] = True
                             #st.session_state[number]['feedback_received'] = True
 
                         st.button("I Like This!", on_click=good_summary_click, args=(bill, summary), key=key4)
@@ -249,7 +289,7 @@ def renderBill(bill, **kwargs):
                         for point in key_points:
                             st.write(point)
                     except exceptions.TextTooLarge:
-                        st.write("Bill is too large to breif entirely, please select a section to brief instead")
+                        st.write("Bill is too large to brief entirely, please select a section to brief instead")
 
                         brief = st.selectbox(
                         "Select a section too brief",
@@ -276,19 +316,27 @@ def renderBill(bill, **kwargs):
 
 
 
+try:
+    if not query:
+        if sort_by == "Relevancy":
+            relevantBills = renderRelevant(congress, type_of_legislation, limit=limit, sort=Bill.types_of_sort[sort_by])
+            renderBills(relevantBills)
 
+        else:
+            renderRecent(congress, type_of_legislation, limit=limit, offset = st.session_state.offset, sort=Bill.types_of_sort[sort_by])
+    else:
 
+        searchedBills = renderSearch(query)
 
-if search_number == 0:
-    try:
-        renderRecent()
-    except Exception as error:
-        st.error(error)
-else:
-    try:
-        bill = Bill(congress, Bill.types_of_legislation_display[type_of_legislation], search_number)
+        renderBills(searchedBills)
+except Exception as error:
+    st.error(error)
+    st.stop()
 
-        bill.title = bill.getTitle()
-        renderBill(bill)
-    except Exception as error:
-        st.error(error)
+    # try:
+    #     bill = Bill(congress, Bill.types_of_legislation_display[type_of_legislation], search_number)
+    #
+    #     bill.title = bill.getTitle()
+    #     renderBill(bill)
+    # except Exception as error:
+    #     st.error(error)
