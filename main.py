@@ -101,7 +101,7 @@ def renderSearch(query):
     return searchedBills
 
 
-@st.cache(suppress_st_warning=True, allow_output_mutation=True, show_spinner=False)
+#@st.cache(suppress_st_warning=True, allow_output_mutation=True, show_spinner=False)
 def renderRelevant(congress, type_of_legislation, **kwargs):
     relevantBills = Bill.relevantBills(congress, Bill.types_of_legislation_display[type_of_legislation], **kwargs)
 
