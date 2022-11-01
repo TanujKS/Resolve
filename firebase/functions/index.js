@@ -15,7 +15,7 @@ exports.text = functions.https.onRequest(async (req, res) => {
 
   if (!doc.exists) {
   //  res.json({result: 'No such document!'});
-    console.log(`${congress} does not exist, saving now`)
+    console.log(`${number} does not exist, saving now`)
 
     try {
       const response = await fetch(`https://api.congress.gov/v3/bill/${congress}/${type}/${number}/text?api_key=VQZwwZb2fRixhEk7g7o1dUscee2TcRIoqU8sc1HY`, {cache: 'no-cache'});

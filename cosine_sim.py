@@ -24,20 +24,21 @@ def getAverage(data):
     return sum
 
 
-def createRedditModel(embedding_path, raw_path=None):
+def createRedditModel(embedding_path):
     model = SentenceTransformer("bert-base-nli-mean-tokens")
     if not os.path.exists(embedding_path):
-        print("Encoding the corpus. This might take a while")
-        df = pd.read_json(f"{raw_path}")
-
-        df_sentences = df[['text']]
-        sentences = df_sentences['text'].to_list()
-
-        sentence_embeddings = model.encode(sentences)
-
-        print("Storing file on disc")
-        with open(f"{embedding_path}", "wb") as file:
-            pickle.dump({'sentences': sentences, 'embeddings': sentence_embeddings}, file)
+        remoteRedditModel()
+        # print("Encoding the corpus. This might take a while")
+        # df = pd.read_json(f"{raw_path}")
+        #
+        # df_sentences = df[['text']]
+        # sentences = df_sentences['text'].to_list()
+        #
+        # sentence_embeddings = model.encode(sentences)
+        #
+        # print("Storing file on disc")
+        # with open(f"{embedding_path}", "wb") as file:
+        #     pickle.dump({'sentences': sentences, 'embeddings': sentence_embeddings}, file)
 
     else:
         print("Loading pre-computed embeddings from disc")
@@ -94,17 +95,7 @@ def remoteRedditModel():
     blob = bucket.blob("reddit_embeddings.pkl")
     blob.download_to_filename("reddit_embeddings.pkl")
 
-    print("Loading pre-computed embeddings from disc")
-    with open("reddit_embeddings.pkl", "rb") as file:
-        cache_data = pickle.load(file)
-        id = cache_data['id']
-        sentences = cache_data['sentences']
-        sentence_embeddings = cache_data['embeddings']
-
-    model = SentenceTransformer("bert-base-nli-mean-tokens")
-
-    return model, id, sentences, sentence_embeddings
-
+    print("Downloaded")
 
 def remoteBillModel():
      key_dict = json.loads(st.secrets["textkey"])
