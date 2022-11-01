@@ -70,7 +70,7 @@ class Bill:
 
     @classmethod
     def relevantBills(cls, congress, type, **kwargs):
-        model, sentences, sentence_embeddings = cosine_sim.createRedditModel("post_embeddings.pkl")
+        model, sentences, sentence_embeddings = cosine_sim.createRedditModel("reddit_embeddings.pkl")
 
         bills = cls.recentBills(congress, type, **kwargs)
 
