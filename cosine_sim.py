@@ -41,12 +41,11 @@ def createRedditModel(embedding_path):
         # with open(f"{embedding_path}", "wb") as file:
         #     pickle.dump({'sentences': sentences, 'embeddings': sentence_embeddings}, file)
 
-    else:
-        print("Loading pre-computed embeddings from disc")
-        with open(f"{embedding_path}", "rb") as file:
-            cache_data = pickle.load(file)
-            sentences = cache_data['sentences']
-            sentence_embeddings = cache_data['embeddings']
+    print("Loading pre-computed embeddings from disc")
+    with open(f"{embedding_path}", "rb") as file:
+        cache_data = pickle.load(file)
+        sentences = cache_data['sentences']
+        sentence_embeddings = cache_data['embeddings']
 
     return model, sentences, sentence_embeddings
 
