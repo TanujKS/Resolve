@@ -22,6 +22,7 @@ exports.text = functions.https.onRequest(async (req, res) => {
 
       if (response.ok) {
         const jsonResponse = await response.json()
+        doc.set(jsonResponse)
         res.json(jsonResponse)
       }
     }
