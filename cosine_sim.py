@@ -33,7 +33,7 @@ def createRedditModel(embedding_path, raw_path=None):
         df_sentences = df[['text']]
         sentences = df_sentences['text'].to_list()
 
-        sentence_embeddings = model.encode(sentences, show_progress_bar=True)
+        sentence_embeddings = model.encode(sentences)
 
         print("Storing file on disc")
         with open(f"{embedding_path}", "wb") as file:

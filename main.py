@@ -95,7 +95,7 @@ def writeSections(sections: dict):
         st.write(item.get('text'))
 
 
-@st.cache(suppress_st_warning=True, allow_output_mutation=True, show_spinner=False)
+#@st.cache(suppress_st_warning=True, allow_output_mutation=True, show_spinner=False)
 def renderSearch(query):
     searchedBills = Bill.searchBills(query)
     return searchedBills
