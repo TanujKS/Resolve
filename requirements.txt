@@ -6,3 +6,4 @@ pandas
 sentence-transformers
 scikit-learn
 transformers
+firebase-admin
