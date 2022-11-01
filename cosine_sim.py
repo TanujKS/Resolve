@@ -100,7 +100,7 @@ def remoteRedditModel():
     print("Downloaded")
 
 def remoteBillModel():
-    if not firebase_admin._apps:
+     if not firebase_admin._apps:
         key_dict = json.loads(st.secrets["textkey"])
         cred = credentials.Certificate(key_dict)
         firebase_admin.initialize_app(cred)
