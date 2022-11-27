@@ -1,6 +1,11 @@
 import re
 from transformers import GPT2TokenizerFast
 import toml
+import json
+import streamlit as st
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import storage
 
 tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
 
@@ -66,10 +71,20 @@ def getPrice(tokens, *, model, fineTuned=False):
     return models.get(model) * tokens / 1000
 
 
+#Given a list of numbers, returns the average
+def getAverage(data: list):
+    if not data:
+        return None
 
-def json_to_toml(input_file, output_file):
-    output_file = "secrets.toml"
+    sum = 0
+    for d in data:
+        sum += d
+    sum /= len(data)
+    return sum
 
+
+#Converts a JSON file, such as a credentials file, to a TOML
+def json_to_toml(input_file, output_file="secrets.toml"):
     with open(input_file) as json_file:
         json_text = json_file.read()
 
@@ -78,3 +93,20 @@ def json_to_toml(input_file, output_file):
 
     with open(output_file, "w") as target:
         target.write(toml_config)
+
+
+def downloadFile(download_path, output_path=None):
+    if not output_path:
+        output_path = download_path
+
+    if not firebase_admin._apps:
+        key_dict = json.loads(st.secrets["textkey"])
+        cred = credentials.Certificate(key_dict)
+        firebase_admin.initialize_app(cred)
+
+    bucket = storage.bucket("resolve-87f2f.appspot.com")
+
+    blob = bucket.blob(download_path)
+    blob.download_to_filename(output_path)
+
+    print(f"Downloaded {download_path} and saved too: {output_path}")

@@ -3,14 +3,13 @@ from bill import Bill
 import json
 from dotenv import load_dotenv
 from utils import exceptions
+import traceback
 
 load_dotenv()
 
 
 if 'offset' not in st.session_state:
-        st.session_state.offset = 0
-
-
+    st.session_state.offset = 0
 
 
 with st.sidebar:
@@ -95,17 +94,9 @@ def writeSections(sections: dict):
         st.write(item.get('text'))
 
 
-#@st.cache(suppress_st_warning=True, allow_output_mutation=True, show_spinner=False)
 def renderSearch(query):
     searchedBills = Bill.searchBills(query)
     return searchedBills
-
-
-#@st.cache(suppress_st_warning=True, allow_output_mutation=True, show_spinner=False)
-def renderRelevant(congress, type_of_legislation, **kwargs):
-    relevantBills = Bill.relevantBills(congress, Bill.types_of_legislation_display[type_of_legislation], **kwargs)
-
-    return relevantBills
 
 
 def renderRecent(congress, type_of_legislation, **kwargs):
@@ -319,9 +310,8 @@ def renderBill(bill, **kwargs):
 try:
     if not query:
         if sort_by == "Relevancy":
-            relevantBills = renderRelevant(congress, type_of_legislation, limit=limit, sort=Bill.types_of_sort[sort_by])
-            renderBills(relevantBills)
-
+            bills = Bill.relevantBills(limit)
+            renderBills(bills)
         else:
             renderRecent(congress, type_of_legislation, limit=limit, offset = st.session_state.offset, sort=Bill.types_of_sort[sort_by])
     else:
@@ -331,6 +321,7 @@ try:
         renderBills(searchedBills)
 except Exception as error:
     st.error(error)
+    traceback.print_exc()
     st.stop()
 
     # try:

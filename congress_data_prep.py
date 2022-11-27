@@ -155,6 +155,7 @@ def combine():
     with open(f"{folder}/data.json", "w+") as file:
         file.write(df.to_json())
 
+
 def removeDuplicates(type):
     with open(f"{folder}/{type}/{type}_pruned.json") as file:
         data = json.load(file)
@@ -263,7 +264,7 @@ if __name__ == "__main__":
     #fetchSummaries("hres")
     #fetchTexts("hr")
     #pruneAllData()
-    combine()
+    #combine()
     #pruneData("hr")
     #removeDuplicates("hconres")
     #verifyData("sjres")
@@ -271,4 +272,4 @@ if __name__ == "__main__":
     #buildDataset()
     #data = findLarge("hr")
     #print(data)
-    #fetchTexts()
+    fetchTexts()

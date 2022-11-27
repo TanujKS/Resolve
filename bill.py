@@ -7,7 +7,7 @@ from utils.utils import *
 import json
 import re
 import shutil
-import cosine_sim
+import search_engine
 
 load_dotenv()
 CONGRESS_API_KEY = os.getenv("CONGRESS_API_KEY")
@@ -68,31 +68,31 @@ class Bill:
         return bill
 
 
+    def to_dict(self):
+        data = {
+        "congress": self.congress,
+        "type": self.type,
+        "number": self.number,
+        }
+
+        return data
+
+
     @classmethod
-    def relevantBills(cls, congress, type, **kwargs):
-        model, sentences, sentence_embeddings = cosine_sim.createRedditModel("reddit_embeddings.pkl")
+    def relevantBills(cls, limit):
+        res = requests.get(f"https://us-central1-resolve-87f2f.cloudfunctions.net/relevantBills?limit={limit}")
+        bills = res.json()
+        print(bills)
+        if None in bills:
+            bills.remove(None)
 
-        bills = cls.recentBills(congress, type, **kwargs)
-
-        rankedBills = {}
-        for bill in bills:
-            relevancy = cosine_sim.getRelevancy(bill.title, model=model, sentence_embeddings=sentence_embeddings)
-            rankedBills[bill.number] = relevancy
-
-
-        rankedBills = {k: v for k, v in sorted(rankedBills.items(), key=lambda x: x[1], reverse=True)}
-        print(rankedBills)
-
-        bills = [Bill(congress, type, number) for number in rankedBills]
-
-        print(rankedBills[list(rankedBills.keys())[0]])
-
+        bills = [Bill(bill['congress'], bill['type'], bill['number']) for bill in bills]
         return bills
 
 
     @classmethod
     def searchBills(cls, query):
-        bills = cosine_sim.search(query)
+        bills = search_engine.search(query)
 
         bills = [Bill(117, bill['type'], bill['number']) for bill in bills]
 
@@ -108,7 +108,6 @@ class Bill:
             raise Exception(data['error'])
 
         bills = [Bill.from_dict(bill) for bill in recentBills]
-        print(bills)
         return bills
 
 

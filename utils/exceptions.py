@@ -1,14 +1,20 @@
-class NoSummary(Exception):
+class BillException(Exception):
     pass
 
-class NoBill(Exception):
+class NoSummary(BillException):
     pass
 
-class NoText(Exception):
+class NoBill(BillException):
+    pass
+
+class NoText(BillException):
     pass
 
 class RateLimited(Exception):
     pass
 
 class TextTooLarge(Exception):
+    pass
+
+class EmbeddingError(Exception):
     pass

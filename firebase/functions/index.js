@@ -7,14 +7,14 @@ admin.initializeApp();
 
 exports.text = functions.https.onRequest(async (req, res) => {
   let congress = req.query.congress;
-  var type = req.query.type;
-  var number = req.query.number;
+  let type = req.query.type;
+  let number = req.query.number;
 
   const congress_data = admin.firestore().collection('congress_data').doc('bills').collection(type).doc(number);
   const doc = await congress_data.get();
 
   if (!doc.exists) {
-  //  res.json({result: 'No such document!'});
+  //  res.json({result: 'No such document!'}   );
     console.log(`${number} does not exist, saving now`)
 
     try {
@@ -37,4 +37,18 @@ exports.text = functions.https.onRequest(async (req, res) => {
 
   //res.json({result: doc.data().text})
 
+});
+
+
+exports.relevantBills = functions.https.onRequest(async (req, res) => {
+  const limit = req.query.limit;
+  const relevant_bills = admin.firestore().collection('relevant_bills');
+
+  let bills = []
+  for (let i = 0; i < limit; i++) {
+    let doc = await relevant_bills.doc(i.toString()).get()
+    bills.push(doc.data())
+  }
+
+  return res.json(bills)
 });
