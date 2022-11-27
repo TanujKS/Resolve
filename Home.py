@@ -35,10 +35,10 @@ with st.sidebar:
 st.title("Welcome to Resolve")
 
 
-
-query = st.text_input("Search with keywords")
-
-st.write("OR search all bills instead")
+#
+# query = st.text_input("Search with keywords")
+#
+# st.write("OR search all bills instead")
 
 
 col1, col2, col3 = st.columns(3)
@@ -308,17 +308,7 @@ def renderBill(bill, **kwargs):
 
 
 try:
-    if not query:
-        if sort_by == "Relevancy":
-            bills = Bill.relevantBills(limit)
-            renderBills(bills)
-        else:
-            renderRecent(congress, type_of_legislation, limit=limit, offset = st.session_state.offset, sort=Bill.types_of_sort[sort_by])
-    else:
-
-        searchedBills = renderSearch(query)
-
-        renderBills(searchedBills)
+    renderRecent(congress, type_of_legislation, limit=limit, offset = st.session_state.offset, sort=Bill.types_of_sort[sort_by])
 except Exception as error:
     st.error(error)
     traceback.print_exc()

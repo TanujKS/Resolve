@@ -21,7 +21,6 @@ class Bill:
 
     types_of_sort = {
     "Latest Action Taken": None,
-    "Relevancy": None,
     "Latest Update": "updateDate+desc",
     "Earliest Update": "updateDate+asc",
     }
