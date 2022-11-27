@@ -130,8 +130,6 @@ dmypy.json
 
 .DS_Store
 *_data/
-gpt3_logs/
-testmodel*/
 secrets.toml
 *credentials.json
-bill_embeddings.pkl
+*.pkl

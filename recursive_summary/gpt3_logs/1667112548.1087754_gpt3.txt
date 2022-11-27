@@ -1,0 +1,13 @@
+PROMPT:
+
+Write a concise 20 word summary of the following bill: 
+
+Making continuing appropriations for fiscal year 2023, and for other purposes. Be it enacted by the Senate and House of Representatives of the United States of America in Congress assembled,
+
+Summary:
+
+==========
+
+RESPONSE:
+
+This bill makes continuing appropriations for fiscal year 2023.
