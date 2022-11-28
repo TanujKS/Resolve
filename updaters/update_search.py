@@ -85,7 +85,7 @@ def main():
     # data = createBillModel(df, output_path="search_embeddings.pkl")
     #embeddings = loadBillEmbeddings("search_embeddings.pkl")
     upload("search_embeddings.pkl", "search_embeddings.pkl")
-
-
+    db.collection("congress_data").document("update_status").set({"updated": True})
+    
 if __name__ == "__main__":
     main()

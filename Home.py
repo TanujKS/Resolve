@@ -68,6 +68,8 @@ with col3:
 
     def previous_page_click(*, limit):
         st.session_state.offset -= limit
+        if st.session_state.offset < 0:
+            st.session_state.offset = 0
 
     previous_page = st.button("Previous Page", on_click=previous_page_click, kwargs={"limit": limit})
 
@@ -308,6 +310,7 @@ def renderBill(bill, **kwargs):
 
 
 try:
+    print(st.session_state.offset)
     renderRecent(congress, type_of_legislation, limit=limit, offset = st.session_state.offset, sort=Bill.types_of_sort[sort_by])
 except Exception as error:
     st.error(error)

@@ -42,13 +42,37 @@ exports.text = functions.https.onRequest(async (req, res) => {
 
 exports.relevantBills = functions.https.onRequest(async (req, res) => {
   const limit = req.query.limit;
+  const offset = req.query.offset;
+
+  if (limit > 250 || limit < 0) {
+    return res.json({"error": "Limit must be between 0 and 250"})
+  }
+
+  if (offset > 250 || offset < 0) {
+   return res.json({"error": "Offset must be between 0 and 250"})
+    }
   const relevant_bills = admin.firestore().collection('relevant_bills');
 
-  let bills = []
-  for (let i = 0; i < limit; i++) {
+  let bills = [snapshot.reference for snapshot
+    in coll_ref.limit(limit).order_by("__name__").stream()]
+
+  for (let i = offset; i < limit + offset; i++) {
     let doc = await relevant_bills.doc(i.toString()).get()
     bills.push(doc.data())
   }
 
   return res.json(bills)
 });
+
+
+exports.updateStatus = functions.https.onRequest(async (req, res) => {
+  let doc_ref = admin.firestore().collection("congress_data").doc("update_status")
+  let doc = await doc_ref.get()
+  let status = doc.get('updated')
+
+  if (status == true) {
+    doc_ref.set({'updated': false})
+  }
+
+  return res.json(status)
+})

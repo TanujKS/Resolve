@@ -4,6 +4,7 @@ import os
 import pickle
 import numpy as np
 import streamlit as st
+import requests
 from utils import utils, exceptions
 from utils.utils import downloadFile
 
@@ -11,8 +12,8 @@ from utils.utils import downloadFile
 #Loads the embeddings for the Congress bill model which powers the search engine, if it cannot be found it is downloaded from the database
 def loadBillModel(path):
     model = SentenceTransformer("bert-base-nli-mean-tokens")
-
-    if not os.path.exists(path):
+    update_status = requests.get("https://us-central1-resolve-87f2f.cloudfunctions.net/updateStatus").json()
+    if not os.path.exists(path) or update_status:
         downloadFile(path)
 
     print(f"Loading embeddings from {path}")
