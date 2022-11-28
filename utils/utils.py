@@ -7,9 +7,6 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import storage
 
-tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
-
-
 def removeAll(list, removers: list):
     for remover in removers:
         while remover in list:
@@ -41,7 +38,7 @@ def containsNumber(string):
 
 
 def getTokens(text, completionTokens):
-
+    tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
     promptTokens = len(tokenizer(text)['input_ids'])
     totalTokens = promptTokens + completionTokens
 

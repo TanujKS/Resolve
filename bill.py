@@ -61,6 +61,7 @@ class Bill:
         bill = cls(congress, type, number)
 
         bill.title = data.get('title')
+        bill.summary = data.get('summary')
         bill.latestAction = data.get('latestAction')
         bill.originChamber = data.get('originChamber')
 
@@ -72,6 +73,9 @@ class Bill:
         "congress": self.congress,
         "type": self.type,
         "number": self.number,
+        "summary": getattr(self, 'summary', None),
+        "text": getattr(self, 'text', None),
+        "title": getattr(self, 'title', None)
         }
 
         return data

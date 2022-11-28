@@ -2,10 +2,12 @@ import pandas as pd
 from sentence_transformers import SentenceTransformer
 import pickle
 import firebase_admin
+from google.cloud import storage as gcs
 from firebase_admin import credentials, firestore, storage
 
+
 cred = credentials.Certificate("credentials.json")
-firebase_admin.initialize_app(cred)
+firebase_admin.initialize_app(cred, {'storageBucket': "resolve-87f2f.appspot.com"})
 db = firestore.client()
 model = SentenceTransformer("bert-base-nli-mean-tokens")
 
@@ -63,26 +65,26 @@ def loadBillEmbeddings(path):
     return embeddings
 
 
-def upload(data, output_path):
-    if not firebase_admin._apps:
-        key_dict = json.loads(st.secrets["textkey"])
-        cred = credentials.Certificate(key_dict)
-        firebase_admin.initialize_app(cred)
+def upload(input_path, output_path=None):
+    if not output_path:
+        output_path = input_path
 
-    bucket = storage.bucket("resolve-87f2f.appspot.com")
-
+    bucket = storage.bucket()
+    gcs.blob._MAX_MULTIPART_SIZE = 5 * 1024* 1024
     blob = bucket.blob(output_path)
-    blob.upload_from_string(data)
+    blob._chunk_size = 5 * 1024* 1024
 
-    print(f"Uploaded too remote: {output_path}")
+    blob.upload_from_filename(input_path)
+
+    print(f"Uploaded {input_path} to remote path: {output_path}")
 
 
 def main():
-    collection = db.collection("congress_data")
-    df = createBillDf(collection)
-    data = createBillModel(df, output_path="search_embeddings.pkl")
+    # collection = db.collection("congress_data")
+    # df = createBillDf(collection)
+    # data = createBillModel(df, output_path="search_embeddings.pkl")
     #embeddings = loadBillEmbeddings("search_embeddings.pkl")
-    upload(data, "search_embeddings.pkl")
+    upload("search_embeddings.pkl", "search_embeddings.pkl")
 
 
 if __name__ == "__main__":
