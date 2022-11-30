@@ -8,6 +8,9 @@ from Home import renderBills
 
 st.title("Search Resolve")
 
+if 'new_session' not in st.session_state:
+    st.session_state.new_session = True
+    st.experimental_memo.clear()
 
 
 with st.sidebar:
