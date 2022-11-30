@@ -41,27 +41,44 @@ exports.text = functions.https.onRequest(async (req, res) => {
 
 
 exports.relevantBills = functions.https.onRequest(async (req, res) => {
-  const limit = req.query.limit;
-  const offset = req.query.offset;
+  let limit = req.query.limit;
+  let offset = req.query.offset;
 
-  if (limit > 250 || limit < 0) {
+  if (offset == null) {
+    offset = 0
+  }
+
+  if (limit == null) {
+    limit = 20
+  }
+
+  if ((parseInt(limit) > 250) || (parseInt(limit) < 0)) {
     return res.json({"error": "Limit must be between 0 and 250"})
   }
 
-  if (offset > 250 || offset < 0) {
-   return res.json({"error": "Offset must be between 0 and 250"})
-    }
-  const relevant_bills = admin.firestore().collection('relevant_bills');
-
-  let bills = [snapshot.reference for snapshot
-    in coll_ref.limit(limit).order_by("__name__").stream()]
-
-  for (let i = offset; i < limit + offset; i++) {
-    let doc = await relevant_bills.doc(i.toString()).get()
-    bills.push(doc.data())
+  if ((parseInt(offset) > 250) || (parseInt(offset) < 0)) {
+    return res.json({"error": "Offset must be between 0 and 250"})
   }
 
-  return res.json(bills)
+  const relevant_bills = admin.firestore().collection('relevant_bills')
+  // const indexDoc = await relevant_bills.doc(offset).get()
+  // let bills = await relevant_bills.startAfter(indexDoc).limit(parseInt(limit)).get()
+  // bills.forEach(async (doc) => {
+  //     const docData = doc.data();
+  //     console.log(docData)
+  //   });
+  // return res.json(bills)
+  let bills = []
+  for (let i = parseInt(offset); i < parseInt(limit) + parseInt(offset); i++) {
+    let doc = await relevant_bills.doc(i.toString()).get()
+    data = doc.data()
+    if (data != null) {
+      bills.push(doc.data())
+    }
+  }
+
+  return res.json({"count": bills.length, "bills": bills})
+
 });
 
 

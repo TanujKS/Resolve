@@ -84,12 +84,16 @@ class Bill:
     @classmethod
     def relevantBills(cls, limit, offset):
         res = requests.get(f"https://us-central1-resolve-87f2f.cloudfunctions.net/relevantBills?limit={limit}&offset={offset}")
-        bills = res.json()
+        res = res.json()
+
+        if res.get('error'):
+            raise Exception(res['error'])
+
+        bills = res.get('bills', [])
 
         while None in bills:
             bills.remove(None)
 
-        print(bills)
         bills = [Bill(bill['congress'], bill['type'], bill['number']) for bill in bills]
         return bills
 

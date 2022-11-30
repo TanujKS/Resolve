@@ -68,11 +68,12 @@ def updateBills(type):
     for bill_data in live_bills:
         if bill_data['number'] in missing_bills:
             addBill(bill_data)
+            print("Added bill", bill_data['number'])
 
 def main():
-#    for type in db.collection("congress_data").document("117").collections():
-    #    updateBills(type.id)
-    updateBills("s")
+    for type in db.collection("congress_data").document("117").collections():
+        updateBills(type.id)
+    #updateBills("s")
 
 if __name__ == "__main__":
     main()
