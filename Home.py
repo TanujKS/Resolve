@@ -40,6 +40,9 @@ st.title("Welcome to Resolve")
 #
 # st.write("OR search all bills instead")
 
+bill_number = st.number_input("Search by bill number (or '0' for general search)",
+    min_value=0,
+    step=1)
 
 col1, col2, col3 = st.columns(3)
 
@@ -94,17 +97,6 @@ def writeSections(sections: dict):
             st.subheader(subheader)
 
         st.write(item.get('text'))
-
-
-def renderSearch(query):
-    searchedBills = Bill.searchBills(query)
-    return searchedBills
-
-
-def renderRecent(congress, type_of_legislation, **kwargs):
-    recentBills = Bill.recentBills(congress, Bill.types_of_legislation_display[type_of_legislation], **kwargs)
-
-    renderBills(recentBills)
 
 
 def renderBills(bills):
@@ -196,6 +188,11 @@ def renderBill(bill, **kwargs):
                     st.markdown(f"**Congress Session**: {bill.congress}")
 
                     st.markdown(f"**Number:** {bill.type.upper()} {bill.number}")
+
+
+                    if getattr(bill, 'score', False):
+                        st.markdown(f"**Search Confidence:** {getattr(bill, 'score', False)}")
+
 
                     action = getattr(bill, 'latestAction', None)
                     if action:
@@ -310,8 +307,14 @@ def renderBill(bill, **kwargs):
 
 
 try:
-    print(st.session_state.offset)
-    renderRecent(congress, type_of_legislation, limit=limit, offset = st.session_state.offset, sort=Bill.types_of_sort[sort_by])
+    if bill_number == 0:
+        recentBills = Bill.recentBills(congress, Bill.types_of_legislation_display[type_of_legislation])
+
+        renderBills(recentBills)
+
+    else:
+        bill = Bill(congress, Bill.types_of_legislation_display[type_of_legislation], number=bill_number)
+        renderBill(bill)
 except Exception as error:
     st.error(error)
     traceback.print_exc()

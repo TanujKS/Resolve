@@ -39,6 +39,19 @@ def fetchBills(type):
     return bills
 
 
+def removeDuplicates(bills):
+    numbers = []
+    no_duplicates = []
+    for bill in bills:
+        if bill['number'] in numbers:
+            continue
+
+        numbers.append(bill['number'])
+        no_duplicates.append(bill)
+
+    return no_duplicates
+
+
 def fetchDBBills(collection):
     bills = [bill.to_dict() for bill in collection.stream()]
     return bills
@@ -58,7 +71,7 @@ def updateBills(type):
     db_numbers = [bill['number'] for bill in db_bills]
     print(len(db_numbers), type, "bills in database")
 
-    live_bills = fetchBills(type)
+    live_bills = removeDuplicates(fetchBills(type))
     bill_numbers = [bill['number'] for bill in live_bills]
     print(len(bill_numbers), type, "bills")
 

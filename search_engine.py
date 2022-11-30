@@ -10,9 +10,9 @@ from utils.utils import downloadFile
 
 
 #Loads the embeddings for the Congress bill model which powers the search engine, if it cannot be found it is downloaded from the database
-def loadBillModel(path):
+def loadBillModel(path, update_status):
     model = SentenceTransformer("bert-base-nli-mean-tokens")
-    update_status = requests.get("https://us-central1-resolve-87f2f.cloudfunctions.net/updateStatus").json()
+
     if not os.path.exists(path) or update_status:
         downloadFile(path)
 
@@ -30,7 +30,7 @@ def loadBillModel(path):
     return model, number, type, text, embeddings
 
 
-#Returns a cosine simliarty score numpy array corresponding to each individual embedding
+#Returns a cosine simliarity score numpy array corresponding to each individual embedding
 def predict(sentence, *, model, embeddings):
     embeddings.shape
 
@@ -46,8 +46,8 @@ def predict(sentence, *, model, embeddings):
 
 
 #Returns search results for a bill by comparing it too thousands of Congress bills and returning the closest scores
-def search(query, limit=10):
-    model, number, type, text, embeddings = loadBillModel("search_embeddings.pkl")
+def search(query, update_status, *, limit=10):
+    model, number, type, text, embeddings = loadBillModel("search_embeddings.pkl", update_status)
 
     scores = predict(query, model=model, embeddings=embeddings)
 
@@ -56,6 +56,6 @@ def search(query, limit=10):
     results = []
     for score in highScores:
         index = np.where(scores[0] == score)[0]
-        results.append({"number": number[index[0]], "type": type[index[0]]})
+        results.append({"number": number[index[0]], "type": type[index[0]], "score": score})
 
     return results

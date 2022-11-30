@@ -4,6 +4,7 @@ import pickle
 import firebase_admin
 from google.cloud import storage as gcs
 from firebase_admin import credentials, firestore, storage
+gcs.blob._MAX_MULTIPART_SIZE = 5 * 1024* 1024
 
 
 cred = credentials.Certificate("credentials.json")
@@ -17,7 +18,8 @@ def createBillDf(collection):
         for type in congress.reference.collections():
             count = 0
             for bill in type.stream():
-                bills.append(bill.to_dict())
+                bill_data = bill.to_dict()
+                bills.append(bill_data)
                 count += 1
             print(f"{count} bills of type {type.id}")
 
@@ -65,27 +67,26 @@ def loadBillEmbeddings(path):
     return embeddings
 
 
-def upload(input_path, output_path=None):
-    if not output_path:
-        output_path = input_path
-
+def upload(input, output_path, *, path=False):
     bucket = storage.bucket()
-    gcs.blob._MAX_MULTIPART_SIZE = 5 * 1024* 1024
     blob = bucket.blob(output_path)
     blob._chunk_size = 5 * 1024* 1024
 
-    blob.upload_from_filename(input_path)
+    if path:
+        blob.upload_from_filename(input_path)
+    else:
+        blob.upload_from_string(input)
 
-    print(f"Uploaded {input_path} to remote path: {output_path}")
+    print(f"Uploaded to remote path: {output_path}")
 
 
 def main():
-    # collection = db.collection("congress_data")
-    # df = createBillDf(collection)
-    # data = createBillModel(df, output_path="search_embeddings.pkl")
+    collection = db.collection("congress_data")
+    df = createBillDf(collection)
+    data = createBillModel(df, output_path="safety.pkl")
     #embeddings = loadBillEmbeddings("search_embeddings.pkl")
-    upload("search_embeddings.pkl", "search_embeddings.pkl")
+    upload(data, "search_embeddings.pkl")
     db.collection("congress_data").document("update_status").set({"updated": True})
-    
+
 if __name__ == "__main__":
     main()

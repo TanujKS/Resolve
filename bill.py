@@ -99,11 +99,14 @@ class Bill:
 
 
     @classmethod
-    def searchBills(cls, query):
-        bills = search_engine.search(query)
-
-        bills = [Bill(117, bill['type'], bill['number']) for bill in bills]
-
+    def searchBills(cls, query, update_status):
+        bill_datas = search_engine.search(query, update_status)
+        bills = []
+        #bills = [Bill(117, bill['type'], bill['number']) for bill in bills]
+        for bill_data in bill_datas:
+            bill = Bill(117, bill_data['type'], bill_data['number'])
+            bill.score = bill_data['score']
+            bills.append(bill)
         return bills
 
 
@@ -201,7 +204,7 @@ class Bill:
                 if format['type'] == type:
                     return format['url']
             else:
-                raise Exception("Text is not avaiable in the requested format.")
+                raise exceptions.NoText("Text is not avaiable in the requested format.")
 
         else:
             return None
