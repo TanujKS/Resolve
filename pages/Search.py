@@ -22,7 +22,7 @@ query = st.text_input("Search with keywords")
 
 
 
-@st.cache(allow_output_mutation=True, show_spinner=False)
+@st.experimental_memo(show_spinner=False)
 def getSearchBills(query, update_status): #for caching purposes
     return Bill.searchBills(query, update_status)
 
