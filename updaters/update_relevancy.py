@@ -174,7 +174,7 @@ def rankCollection(embeddings, coll_ref, scores=[], cursor=None):
 
         data['relevancy_score'] = getRelevancy(text, model=model, embeddings=embeddings)
 
-        print(data['title'], data['relevancy_score'])
+        print(data['relevancy_score'])
         scores.append(data)
 
     if len(docs) == 1000:

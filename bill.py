@@ -89,12 +89,18 @@ class Bill:
         if res.get('error'):
             raise Exception(res['error'])
 
-        bills = res.get('bills', [])
+        bill_datas = res.get('bills', [])
 
-        while None in bills:
-            bills.remove(None)
+        while None in bill_datas:
+            bill_datas.remove(None)
 
-        bills = [Bill(bill['congress'], bill['type'], bill['number']) for bill in bills]
+        #bills = [Bill(bill['congress'], bill['type'], bill['number']) for bill in bills]
+        bills = []
+        for bill_data in bill_datas:
+            bill = Bill(bill_data['congress'], bill_data['type'], bill_data['number'])
+            bill.relevancy_score = round(float(bill_data['relevancy_score']), 2)
+            bills.append(bill)
+
         return bills
 
 
@@ -105,7 +111,7 @@ class Bill:
         #bills = [Bill(117, bill['type'], bill['number']) for bill in bills]
         for bill_data in bill_datas:
             bill = Bill(117, bill_data['type'], bill_data['number'])
-            bill.score = bill_data['score']
+            bill.search_score = round(float(bill_data['score']), 2)
             bills.append(bill)
         return bills
 

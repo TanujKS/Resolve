@@ -30,5 +30,4 @@ def getSearchBills(query, update_status): #for caching purposes
 if query:
     update_status = requests.get("https://us-central1-resolve-87f2f.cloudfunctions.net/updateStatus").json()
     bills = getSearchBills(query, update_status)
-    print(bills[0].score)
     renderBills(bills)

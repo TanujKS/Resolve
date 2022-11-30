@@ -189,10 +189,13 @@ def renderBill(bill, **kwargs):
 
                     st.markdown(f"**Number:** {bill.type.upper()} {bill.number}")
 
+                    search_score = getattr(bill, 'search_score', False)
+                    if search_score:
+                        st.markdown(f"**Search Confidence:** {search_score}")
 
-                    if getattr(bill, 'score', False):
-                        st.markdown(f"**Search Confidence:** {getattr(bill, 'score', False)}")
-
+                    relevancy_score = getattr(bill, 'relevancy_score', False)
+                    if relevancy_score:
+                        st.markdown(f"**Relevancy Score:** {relevancy_score}")
 
                     action = getattr(bill, 'latestAction', None)
                     if action:
