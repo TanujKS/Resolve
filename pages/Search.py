@@ -6,6 +6,10 @@ from bill import Bill
 from utils import exceptions
 from utils.render import renderBills
 
+st.set_page_config(page_title="Resolve")
+
+
+
 
 st.title("Search Resolve")
 

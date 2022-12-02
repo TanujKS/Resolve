@@ -7,6 +7,7 @@ from utils import exceptions
 from utils.render import renderBills
 
 limit = 20
+st.set_page_config(page_title="Resolve")
 
 
 if 'offset' not in st.session_state:
