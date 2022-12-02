@@ -204,7 +204,7 @@ def renderBill(bill, **kwargs):
                         for point in key_points:
                             st.write(point)
                     except exceptions.TextTooLarge:
-                        st.write("Bill is too large to brief entirely, please select a section to brief instead")
+                        st.write("Bill is too large to brief entirely, please select a section to brief instead or fetch a summary instead")
 
                         brief = st.selectbox(
                         "Select a section too brief",

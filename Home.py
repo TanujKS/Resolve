@@ -13,6 +13,13 @@ if 'offset' not in st.session_state:
     st.session_state.offset = 0
 
 
+
+
+
+st.title("Welcome to Resolve")
+st.set_page_config(page_title="Resolve")
+
+
 with st.sidebar:
     st.header("Our Mission")
     st.write("Too many citizens here in the United States are discouraged from participating in politics with all the political jargon and legal language. Resolve aims to solve that problem by using advanced Artifical Intelligence and Machine Learning to explain Congressional bills in language humans can understand.")
@@ -29,11 +36,10 @@ with st.sidebar:
     st.write("Concurrent resolutions require approval from both Houses but do not require the Signature of the President as they do not have the effect of the law. They are mainly used to convey the sentiment, views, or beliefs of Congress as a whole. Concurrent resolutions are denoted by the house they originated in followed by CONRES (CONcurrent RESolution)")
 
     st.subheader("What are Simple Resolutions?")
-    st.write("Simple resolutions is a proposal only pertaining to one branch of Congress. It does not require the approval of the other House or the President as it does not have the force of law. They are generally used to express the sentiment, views, or beleifs of a single House. Simple resolutions are denoted as the House they pertain too followed by RES (RESolution)")
+    st.write("Simple resolutions is a proposal only pertaining to one branch of Congress. It does not require the approval of the other House or the President as it does not have the force of law. They are generally used to express the sentiment, views, or beliefs of a single House. Simple resolutions are denoted as the House they pertain too followed by RES (RESolution)")
 
 
 
-st.title("Welcome to Resolve")
 
 
 bill_number = st.number_input("Search by bill number (or '0' for general search)",

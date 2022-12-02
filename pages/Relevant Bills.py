@@ -20,7 +20,7 @@ st.title("Relevant Bills")
 
 
 with st.sidebar:
-    st.write("Using a daily updated database of thousands of posts from the popular subreddit r/Politics, Resolve can reccomend bills that are pertintent to current events.")
+    st.write("Using a daily updated database of thousands of posts from the popular subreddit r/Politics, Resolve can recommend bills that are pertinent to current events.")
 
 
 
