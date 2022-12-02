@@ -16,7 +16,7 @@ firebase_admin.initialize_app(cred)
 db = firestore.client()
 
 base_headers = {'user-agent': 'Windows PC:resolve:v1.0.0 (by /u/awesome225007)'}
-newAuth = True
+newAuth = False
 model = SentenceTransformer("bert-base-nli-mean-tokens")
 
 
