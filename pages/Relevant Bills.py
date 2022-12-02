@@ -12,6 +12,7 @@ limit = 20
 
 if 'offset' not in st.session_state:
     st.session_state.offset = 0
+    st.experimental_memo.clear()
 
 
 
@@ -52,10 +53,10 @@ with col3:
 
 
 
-
-@st.cache(allow_output_mutation=True, show_spinner=False)
+@st.experimental_memo(show_spinner=False, experimental_allow_widgets=True)
 def getRelevantBills(limit, offset):
     return Bill.relevantBills(limit, offset)
+
 
 bills = getRelevantBills(limit, st.session_state.offset)
 renderBills(bills)
