@@ -28,6 +28,7 @@ def addData(bills, url):
         bills.append(bill_data)
 
     if data['pagination'].get('next'):
+        print("Fetched", data['pagination']['count'], "bills")
         return addData(bills, data['pagination']['next'])
     else:
         return bills
@@ -73,7 +74,7 @@ def updateBills(type):
 
     live_bills = removeDuplicates(fetchBills(type))
     bill_numbers = [bill['number'] for bill in live_bills]
-    print(len(bill_numbers), type, "bills")
+    print(len(bill_numbers), type, "bills in Congress")
 
     missing_bills = list(set(bill_numbers).difference(db_numbers))
     print(len(missing_bills), type, "bills to be added")

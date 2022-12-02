@@ -4,7 +4,8 @@ sys.path.insert(0, "..")
 
 import time
 from bill import Bill
-from Home import renderBills
+from utils.render import renderBills
+#from Home import renderBills
 
 limit = 20
 
@@ -45,6 +46,7 @@ with col3:
         st.session_state.offset += limit
 
     next_page = st.button("Next Page", on_click=next_page_click, kwargs={"limit": limit}, key=time.time())
+
 
 
 

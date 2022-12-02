@@ -3,8 +3,7 @@ import sys
 sys.path.insert(0, "..")
 import requests
 from bill import Bill
-from Home import renderBills
-
+from utils.render import renderBills
 
 st.title("Search Resolve")
 
@@ -30,5 +29,4 @@ def getSearchBills(query, update_status): #for caching purposes
 if query:
     update_status = requests.get("https://us-central1-resolve-87f2f.cloudfunctions.net/updateStatus").json()
     bills = getSearchBills(query, update_status)
-    print(bills[0].score)
     renderBills(bills)
