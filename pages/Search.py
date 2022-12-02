@@ -3,7 +3,7 @@ sys.path.insert(0, "..")
 import streamlit as st
 import requests
 from bill import Bill
-from Home import renderBills
+from utils.render import renderBills
 
 
 st.title("Search Resolve")
