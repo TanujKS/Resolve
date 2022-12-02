@@ -7,6 +7,7 @@ from utils.render import renderBills
 import traceback
 
 load_dotenv()
+st.set_page_config(page_title="Resolve")
 
 
 if 'offset' not in st.session_state:
@@ -14,10 +15,7 @@ if 'offset' not in st.session_state:
 
 
 
-
-
 st.title("Welcome to Resolve")
-st.set_page_config(page_title="Resolve")
 
 
 with st.sidebar:
