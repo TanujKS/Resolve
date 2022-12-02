@@ -415,13 +415,13 @@ class Bill:
         try:
             response = openai.Completion.create(**kwargs)
         except openai.error.InvalidRequestError:
-            kwargs['model'] = "text-davinci-002"
+            kwargs['model'] = "text-davinci-003"
             try:
                 response = openai.Completion.create(**kwargs)
             except openai.error.InvalidRequestError:
                 raise exceptions.TextTooLarge("Text is too large to get a brief, try fetching a summary instead")
 
-        print(response)
+        print("Response", response)
 
         choice = response['choices'][0]['text']
         if "\n" in choice:

@@ -94,4 +94,3 @@ try:
 except Exception as error:
     st.error(error)
     traceback.print_exc()
-    st.stop()

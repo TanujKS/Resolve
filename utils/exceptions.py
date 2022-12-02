@@ -13,6 +13,9 @@ class NoText(BillException):
 class RateLimited(Exception):
     pass
 
+class SectionNotAvailable(BillException):
+    pass
+
 class TextTooLarge(Exception):
     pass
 

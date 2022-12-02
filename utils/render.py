@@ -1,8 +1,9 @@
 import sys
 sys.path.insert(0, "..")
 import streamlit as st
+import traceback
 from bill import Bill
-
+from utils import exceptions
 
 def writeSections(sections: dict):
     for key, item in sections.items():
@@ -124,7 +125,7 @@ def renderBill(bill, **kwargs):
                     sections = bill.getSections()
 
                     if not sections:
-                        st.error("The text of this bill has not yet been made avaiable by Congress.")
+                        st.error("The text of this bill has not yet been made available by Congress.")
 
                     writeSections(sections)
 
@@ -184,6 +185,10 @@ def renderBill(bill, **kwargs):
 
                     sections = bill.getSections()
                     section = bill.getSectionFromSubheader(summarized_section, sections=sections)
+
+                    if not section:
+                        raise exceptions.SectionNotAvailable("Section is not available or has been redacted.")
+
                     st.write(bill.generateSummary(text=sections[section]['text']))
 
             with tab4:
@@ -215,6 +220,9 @@ def renderBill(bill, **kwargs):
 
                     sections = bill.getSections()
                     section = bill.getSectionFromSubheader(briefed_section, sections=sections)
+                    if not section:
+                        raise exceptions.SectionNotAvailable("Section is not available or has been redacted.")
+
                     key_points = bill.generateBrief(text=sections[section]['text'])
 
                     for point in key_points:
@@ -222,3 +230,4 @@ def renderBill(bill, **kwargs):
 
     except Exception as error:
         st.error(error)
+        traceback.print_exc()
