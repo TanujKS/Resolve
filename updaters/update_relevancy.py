@@ -16,7 +16,7 @@ firebase_admin.initialize_app(cred)
 db = firestore.client()
 
 base_headers = {'user-agent': 'Windows PC:resolve:v1.0.0 (by /u/awesome225007)'}
-newAuth = False
+newAuth = True
 model = SentenceTransformer("bert-base-nli-mean-tokens")
 
 
@@ -115,7 +115,7 @@ def createRedditEmbeddings(df, output_path=None):
     model = SentenceTransformer("bert-base-nli-mean-tokens")
 
     print(f"Encoding the corpus with {len(df.index)} entries. This might take a while...")
-    post_embeddings = model.encode(posts, show_progress_bar=True)
+    post_embeddings = model.encode(posts, show_progress_bar=True, device="cuda")
 
     if output_path:
         print(f"Saving embeddings to {output_path}")

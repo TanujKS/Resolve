@@ -40,7 +40,7 @@ def createBillModel(df, output_path=None):
 
 
     print("Encoding the corpus. This might take a while...")
-    embeddings = model.encode(text, show_progress_bar=True)
+    embeddings = model.encode(text, show_progress_bar=True, device="cuda")
 
     serialized_data = pickle.dumps({'number': number, 'text': text, 'type': type, 'embeddings': embeddings})
 
@@ -83,7 +83,7 @@ def upload(input, output_path, *, path=False):
 def main():
     collection = db.collection("congress_data")
     df = createBillDf(collection)
-    data = createBillModel(df, output_path="safety.pkl")
+    data = createBillModel(df, output_path="search_embeddings.pkl")
     #embeddings = loadBillEmbeddings("search_embeddings.pkl")
     upload(data, "search_embeddings.pkl")
     db.collection("congress_data").document("update_status").set({"updated": True})
