@@ -3,6 +3,7 @@ sys.path.insert(0, "..")
 import streamlit as st
 import time
 from bill import Bill
+from utils import exceptions
 from utils.render import renderBills
 
 limit = 20
