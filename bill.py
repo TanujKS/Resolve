@@ -98,7 +98,7 @@ class Bill:
         bills = []
         for bill_data in bill_datas:
             bill = Bill(bill_data['congress'], bill_data['type'], bill_data['number'])
-            bill.relevancy_score = round(float(bill_data['relevancy_score']), 2)
+            bill.relevancy_score = str(round(float(bill_data['relevancy_score']) * 100, 2)) + "%"
             bills.append(bill)
 
         return bills
@@ -111,7 +111,7 @@ class Bill:
         #bills = [Bill(117, bill['type'], bill['number']) for bill in bills]
         for bill_data in bill_datas:
             bill = Bill(117, bill_data['type'], bill_data['number'])
-            bill.search_score = round(float(bill_data['score']), 2)
+            bill.search_score = str(round(float(bill_data['score']) * 100, 2)) + "%"
             bills.append(bill)
         return bills
 

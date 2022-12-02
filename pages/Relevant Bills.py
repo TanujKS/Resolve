@@ -1,7 +1,6 @@
-import streamlit as st
 import sys
 sys.path.insert(0, "..")
-
+import streamlit as st
 import time
 from bill import Bill
 from Home import renderBills

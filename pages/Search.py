@@ -1,6 +1,6 @@
-import streamlit as st
 import sys
 sys.path.insert(0, "..")
+import streamlit as st
 import requests
 from bill import Bill
 from Home import renderBills
@@ -17,10 +17,7 @@ with st.sidebar:
     st.write("Using a cosine similarity model to compare keywords to a constantly updating database of Congressional bills, Resolve can help you find bills that are important to you")
 
 
-
-
 query = st.text_input("Search with keywords")
-
 
 
 
