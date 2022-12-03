@@ -9,9 +9,11 @@ import re
 import shutil
 import search_engine
 
+
 load_dotenv()
 CONGRESS_API_KEY = os.getenv("CONGRESS_API_KEY")
 openai.api_key = os.getenv("OPENAI_API_KEY")
+
 
 
 
@@ -46,6 +48,7 @@ class Bill:
     "House Resolution": "hres",
     "Senate Resolution": "sres"
     }
+
 
     def __init__(self, congress, type, number):
         self.congress = congress
@@ -210,7 +213,7 @@ class Bill:
                 if format['type'] == type:
                     return format['url']
             else:
-                raise exceptions.NoText("Text is not avaiable in the requested format.")
+                raise exceptions.NoText("Text is not available in the requested format.")
 
         else:
             return None
@@ -436,7 +439,7 @@ class Bill:
             text = self.getText()
 
         if not text:
-            raise Exception("Text is not avaiable for this bill.")
+            raise Exception("Text is not available for this bill.")
 
         beginning = "Summarize the following bill in detail: \n\n"
         ending = "\n\Summary:"
@@ -509,11 +512,15 @@ class Bill:
 
 
 
+
 class RelatedBill(Bill):
     @classmethod
     def from_dict(cls, data):
         bill = cls.from_dict(data)
         bill.relationshipDetails = data['relationshipDetails']
+
+
+
 
 if __name__ == "__main__":
     with open("output", "w+") as file:

@@ -2,9 +2,11 @@ import sys
 sys.path.insert(0, "..")
 import requests
 import json
-from bill import Bill
 import firebase_admin
 from firebase_admin import credentials, firestore, storage
+from bill import Bill
+from utils import exceptions
+
 
 cred = credentials.Certificate("credentials.json")
 firebase_admin.initialize_app(cred)
@@ -60,7 +62,12 @@ def fetchDBBills(collection):
 
 def addBill(bill_data):
     bill = Bill.from_dict(bill_data)
-    bill.text = bill.getText()
+    try:
+        bill.text = bill.getText()
+    except exceptions.NoText:
+        print('No Text Available')
+        return
+
     byte_count = len(bill.text.encode('utf8'))
     if byte_count < 1000000:
         doc = db.collection("congress_data").document(str(bill.congress)).collection(bill.type).document(str(bill.number))
@@ -82,7 +89,7 @@ def updateBills(type):
     for bill_data in live_bills:
         if bill_data['number'] in missing_bills:
             addBill(bill_data)
-            print("Added bill", bill_data['number'])
+            print("Added bill", bill_data['type'], ['number'])
 
 def main():
     for type in db.collection("congress_data").document("117").collections():
