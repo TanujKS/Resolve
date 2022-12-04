@@ -95,13 +95,13 @@ with col4:
 
 
 @st.experimental_memo(show_spinner=False, experimental_allow_widgets=True)
-def getRecentBills(*, offset, limit):
-    return Bill.recentBills(congress, Bill.types_of_legislation_display[type_of_legislation], offset=offset, limit=limit)
+def getRecentBills(congress, type, *, sort, offset, limit):
+    return Bill.recentBills(congress, type, sort=sort, offset=offset, limit=limit)
 
 
 def main():
     if bill_number == 0:
-        recentBills = getRecentBills(offset=st.session_state.home_offset, limit=limit)
+        recentBills = getRecentBills(congress, Bill.types_of_legislation_display[type_of_legislation], sort=Bill.types_of_sort[sort_by], offset=st.session_state.home_offset, limit=limit)
         renderBills(recentBills)
     else:
         bill = Bill(congress, Bill.types_of_legislation_display[type_of_legislation], number=bill_number)
