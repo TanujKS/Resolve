@@ -32,7 +32,11 @@ def getSearchBills(query, update_status): #for caching purposes
     return Bill.searchBills(query, update_status)
 
 
-if query:
-    update_status = requests.get("https://us-central1-resolve-87f2f.cloudfunctions.net/updateStatus").json()
-    bills = getSearchBills(query, update_status)
-    renderBills(bills)
+def main():
+    if query:
+        update_status = requests.get("https://us-central1-resolve-87f2f.cloudfunctions.net/updateStatus").json()
+        bills = getSearchBills(query, update_status)
+        renderBills(bills)
+
+
+main()

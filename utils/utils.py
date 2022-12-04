@@ -7,11 +7,13 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import storage
 
+
 def removeAll(list, removers: list):
     for remover in removers:
         while remover in list:
             list.remove(remover)
     return list
+
 
 def replaceAll(list, remover, replacer):
     while remover in list:

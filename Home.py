@@ -10,8 +10,9 @@ load_dotenv()
 st.set_page_config(page_title="Resolve")
 
 
-if 'offset' not in st.session_state:
-    st.session_state.offset = 0
+if 'home_offset' not in st.session_state:
+    st.session_state.home_offset = 0
+    st.session_state.home_page = 1
 
 
 
@@ -39,12 +40,13 @@ with st.sidebar:
 
 
 
-
 bill_number = st.number_input("Search by bill number (or '0' for general search)",
     min_value=0,
-    step=1)
+    step=1
+    )
 
-col1, col2, col3 = st.columns(3)
+
+col1, col2, col3, col4 = st.columns(4)
 
 with col1:
     congress = st.selectbox(
@@ -67,34 +69,43 @@ with col2:
 
 
 with col3:
-    st.markdown("#")
-
     def previous_page_click(*, limit):
-        st.session_state.offset -= limit
-        if st.session_state.offset < 0:
-            st.session_state.offset = 0
-
-    previous_page = st.button("Previous Page", on_click=previous_page_click, kwargs={"limit": limit})
-
-    st.markdown("#")
+        st.session_state.home_offset -= limit
+        st.session_state.home_page -= 1
+        if st.session_state.home_offset < 0:
+            st.session_state.home_offset = 0
+            st.session_state.home_page = 1
 
     def next_page_click(*, limit):
-        st.session_state.offset += limit
+        st.session_state.home_offset += limit
+        st.session_state.home_page += 1
 
+    st.markdown("#")
     next_page = st.button("Next Page", on_click=next_page_click, kwargs={"limit": limit})
+    st.markdown("#")
+    previous_page = st.button("Previous Page", on_click=previous_page_click, kwargs={"limit": limit})
+
+
+with col4:
+    st.markdown("#")
+    st.markdown("#")
+    st.subheader(f"Page {st.session_state.home_page}")
 
 
 
 
-try:
+@st.experimental_memo(show_spinner=False, experimental_allow_widgets=True)
+def getRecentBills(*, offset, limit):
+    return Bill.recentBills(congress, Bill.types_of_legislation_display[type_of_legislation], offset=offset, limit=limit)
+
+
+def main():
     if bill_number == 0:
-        recentBills = Bill.recentBills(congress, Bill.types_of_legislation_display[type_of_legislation])
-
+        recentBills = getRecentBills(offset=st.session_state.home_offset, limit=limit)
         renderBills(recentBills)
-
     else:
         bill = Bill(congress, Bill.types_of_legislation_display[type_of_legislation], number=bill_number)
         renderBills([bill])
-except Exception as error:
-    st.error(error)
-    traceback.print_exc()
+
+
+main()
