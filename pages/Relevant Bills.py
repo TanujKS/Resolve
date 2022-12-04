@@ -65,4 +65,7 @@ def main():
     renderBills(bills)
 
 
-main()
+try:
+    main()
+except exceptions.BillException as error:
+    st.error(error)

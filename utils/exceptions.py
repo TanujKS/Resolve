@@ -10,13 +10,13 @@ class NoBill(BillException):
 class NoText(BillException):
     pass
 
-class RateLimited(Exception):
-    pass
-
 class SectionNotAvailable(BillException):
     pass
 
-class TextTooLarge(Exception):
+class TextTooLarge(BillException):
+    pass
+
+class RateLimited(Exception):
     pass
 
 class EmbeddingError(Exception):

@@ -158,7 +158,7 @@ class Bill:
         titles = []
 
         if data.get('error'):
-            raise Exception(data['error'])
+            raise exceptions.NoBill(data['error'])
 
         for title in data['titles']:
             titles.append(title['title'])
@@ -518,11 +518,3 @@ class RelatedBill(Bill):
     def from_dict(cls, data):
         bill = cls.from_dict(data)
         bill.relationshipDetails = data['relationshipDetails']
-
-
-
-
-if __name__ == "__main__":
-    with open("output", "w+") as file:
-        bill = Bill(117, "hr", 9087)
-        json.dump(bill.getSections(), file, indent=4)
