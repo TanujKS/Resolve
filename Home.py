@@ -40,7 +40,7 @@ with st.sidebar:
 
 
 
-bill_number = st.number_input("Search by bill number (or '0' for general search)",
+bill_number = st.number_input("Search by Bill number",
     min_value=0,
     step=1
     )
