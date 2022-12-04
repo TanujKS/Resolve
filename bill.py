@@ -399,9 +399,9 @@ class Bill:
             text = self.getText()
 
         if not text:
-            raise Exception("Text is not avaiable for this bill")
+            raise exceptions.NoText("Text is not available for this bill")
 
-        model = "text-davinci-002"
+        model = "text-davinci-003"
         beginning = "Imagine you are a smart politican listing and explaining in detail 3 of the most important takeaways from the following text: \n\n"
         ending = "\nList:"
         kwargs = {
@@ -439,7 +439,7 @@ class Bill:
             text = self.getText()
 
         if not text:
-            raise Exception("Text is not available for this bill.")
+            raise exceptions.NoText("Text is not available for this bill.")
 
         beginning = "Summarize the following bill in detail: \n\n"
         ending = "\n\Summary:"
@@ -460,7 +460,7 @@ class Bill:
             kwargs['model'] = 'text-curie-001'
             price += getPrice(tokens, model="curie", fineTuned=True)
         elif tokens >= 2049 and tokens <= 4097:
-            kwargs['model'] = "text-davinci-002"
+            kwargs['model'] = "text-davinci-003"
             price += getPrice(tokens, model="davinci", fineTuned=False)
 
         else:

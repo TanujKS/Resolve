@@ -19,7 +19,7 @@ if 'new_session' not in st.session_state:
 
 
 with st.sidebar:
-    st.write("Using a cosine similarity model to compare keywords to a constantly updating database of Congressional bills, Resolve can help you find bills that are important to you")
+    st.write("Using machine learning to compare keywords to a database of Congressional bills, Resolve can help you find bills that are important to you.")
 
 
 query = st.text_input("Search with keywords")

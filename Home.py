@@ -21,11 +21,11 @@ st.title("Welcome to Resolve")
 
 with st.sidebar:
     st.header("Our Mission")
-    st.write("Too many citizens here in the United States are discouraged from participating in politics with all the political jargon and legal language. Resolve aims to solve that problem by using advanced Artifical Intelligence and Machine Learning to explain Congressional bills in language humans can understand.")
+    st.write("Too many citizens here in the United States are discouraged from participating in politics with all the political jargon and legal language. Resolve aims to solve that problem by using advanced Artificial Intelligence and Machine Learning to explain Congressional bills in language humans can understand.")
 
     st.header("Congressional Bills")
     st.subheader("What are Congressional bills?")
-    st.write("Bills are a proposal put before a body of Congress. Bills are written by a Representative, then handed over a committee of experts on the topic. It is then voted on with a simple majority and passed to the other branch of Congress which then repeats the process. After passing both the House and the Senate it is put on the President's desk where they can either veto it or pass it as law. Bills are denoted by the House they originated in, such as HR for House Resolutions and S for Senate Resolutions")
+    st.write("Bills are a proposal put before a body of Congress. Bills are written by a Representative, then handed over a committee of experts on the topic. It is then voted on with a simple majority and passed to the other branch of Congress which then repeats the process. After passing both the House and the Senate it is put on the President's desk where they can either veto it or pass it as law. Bills are denoted by the House they originated in, such as HR for House Resolutions and S for Senate Resolutions.")
     st.write("Tip: Use the 'More Information' button when viewing a bill to see what stage it's currently in!")
 
     st.subheader("What are Joint Resolutions?")
