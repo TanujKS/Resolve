@@ -30,4 +30,4 @@ Resolve uses OpenAI's GPT-3 models through their API to provide well-written sum
 To show users bills that are pertinent to current events, Resolve pulls thousands of posts from the popular subreddit r/Politics daily and gives all the Congressional bills stored in a database a 'relevancy score' using a cosine simliarity model, which then allows the bills to be ranked from most relevant to least.
 
 ## Search Engine
-To help users find bills that matter to them, Resolve uses cosine simliarity to compare a queries sentiment, not just words, to a database of all Congressional bills.    
+To help users find bills that matter to them, Resolve uses cosine similarity to compare a queries sentiment, not just words, to a database of all Congressional bills.    
