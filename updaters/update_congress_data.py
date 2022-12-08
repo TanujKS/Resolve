@@ -7,6 +7,7 @@ from firebase_admin import credentials, firestore, storage
 from bill import Bill
 from utils import exceptions
 import argparse
+
 parser = argparse.ArgumentParser()
 parser.add_argument("-c", "--congress", help="Starts updating at a certain Congress session", default=117)
 args = parser.parse_args()
@@ -22,7 +23,6 @@ def build_database():
     for congress in congresses:
         print("Creating congress", congress)
         doc = db.collection("congress_data").document(str(congress))
-        doc.set({})
         for type in types_of_legislation:
             doc.collection(type).document("0").set({})
 
@@ -89,7 +89,7 @@ def addBill(bill_data):
 
     if not bill.text:
         return
-        
+
     byte_count = len(bill.text.encode('utf8'))
     if byte_count < 1000000:
         doc = db.collection("congress_data").document(str(bill.congress)).collection(bill.type).document(str(bill.number))
@@ -123,4 +123,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    build_database()

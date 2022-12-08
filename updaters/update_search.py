@@ -4,23 +4,30 @@ import pickle
 import firebase_admin
 from google.cloud import storage as gcs
 from firebase_admin import credentials, firestore, storage
-gcs.blob._MAX_MULTIPART_SIZE = 5 * 1024* 1024
+import argparse
 
+parser = argparse.ArgumentParser()
+parser.add_argument("-e", "--encoder", help="Encodes models with different PyTorch devices", default="cuda")
+args = parser.parse_args()
 
 cred = credentials.Certificate("credentials.json")
 firebase_admin.initialize_app(cred, {'storageBucket': "resolve-87f2f.appspot.com"})
 db = firestore.client()
 model = SentenceTransformer("bert-base-nli-mean-tokens")
+gcs.blob._MAX_MULTIPART_SIZE = 5 * 1024* 1024
+
 
 def createBillDf(collection):
     bills = []
     for congress in collection.stream():
+        print("Congress:", congress.id)
         for type in congress.reference.collections():
             count = 0
             for bill in type.stream():
                 bill_data = bill.to_dict()
-                bills.append(bill_data)
-                count += 1
+                if bill_data:
+                    bills.append(bill_data)
+                    count += 1
             print(f"{count} bills of type {type.id}")
 
     df = pd.DataFrame.from_records(bills)
@@ -40,7 +47,7 @@ def createBillModel(df, output_path=None):
 
 
     print("Encoding the corpus. This might take a while...")
-    embeddings = model.encode(text, show_progress_bar=True, device="cuda")
+    embeddings = model.encode(text, show_progress_bar=True, device=args.encoder)
 
     serialized_data = pickle.dumps({'number': number, 'text': text, 'type': type, 'embeddings': embeddings})
 

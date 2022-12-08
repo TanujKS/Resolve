@@ -10,6 +10,11 @@ import pickle
 import firebase_admin
 from firebase_admin import credentials, firestore
 from sklearn.metrics.pairwise import cosine_similarity
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-e", "--encoder", help="Encodes models with different PyTorch devices", default="cuda")
+args = parser.parse_args()
 
 cred = credentials.Certificate("credentials.json")
 firebase_admin.initialize_app(cred)
@@ -115,7 +120,7 @@ def createRedditEmbeddings(df, output_path=None):
     model = SentenceTransformer("bert-base-nli-mean-tokens")
 
     print(f"Encoding the corpus with {len(df.index)} entries. This might take a while...")
-    post_embeddings = model.encode(posts, show_progress_bar=True, device="cuda")
+    post_embeddings = model.encode(posts, show_progress_bar=True, device=args.encoder)
 
     if output_path:
         print(f"Saving embeddings to {output_path}")
