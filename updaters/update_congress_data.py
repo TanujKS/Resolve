@@ -12,7 +12,7 @@ parser.add_argument("-c", "--congress", help="Starts updating at a certain Congr
 args = parser.parse_args()
 
 types_of_legislation = ["hr", "s", "hjres","sjres", "hconres", "sconres", "hres", "sres"]
-congresses = [i for i in (range(args.congress, 81, -1))]
+congresses = [i for i in (range(int(args.congress), 81, -1))]
 cred = credentials.Certificate("credentials.json")
 firebase_admin.initialize_app(cred)
 db = firestore.client()
@@ -82,10 +82,14 @@ def addBill(bill_data):
     bill = Bill.from_dict(bill_data)
     try:
         bill.text = bill.getText()
+
     except exceptions.NoText:
         print('No Text Available')
         return
 
+    if not bill.text:
+        return
+        
     byte_count = len(bill.text.encode('utf8'))
     if byte_count < 1000000:
         doc = db.collection("congress_data").document(str(bill.congress)).collection(bill.type).document(str(bill.number))
