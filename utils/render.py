@@ -122,8 +122,11 @@ def renderBill(bill, **kwargs):
 
             with tab2:
                 if st.button("Fetch Text", key=key2):
-                    sections = bill.getSections()
-
+                    try:
+                        sections = bill.getSections()
+                    except exceptions.NoText as error:
+                        st.error(error)
+                        
                     if sections:
                         writeSections(sections)
                     else:
@@ -209,7 +212,7 @@ def renderBill(bill, **kwargs):
 
                     except exceptions.NoText as error:
                         st.error(error)
-                        
+
                     except exceptions.TextTooLarge:
                         st.write("Bill is too large to brief entirely, please select a section to brief instead or fetch a summary instead")
 

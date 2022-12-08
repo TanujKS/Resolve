@@ -213,7 +213,7 @@ class Bill:
                 if format['type'] == type:
                     return format['url']
             else:
-                raise exceptions.NoText("Text is not available in the requested format.")
+                raise exceptions.NoText("The text of this bill has not yet been made available by Congress.")
 
         else:
             return None
