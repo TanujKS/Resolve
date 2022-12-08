@@ -164,6 +164,9 @@ def renderBill(bill, **kwargs):
 
                         st.button("I Like This!", on_click=good_summary_click, args=(bill, summary), key=key4, disabled=True)
 
+                    except exceptions.NoText as error:
+                        st.error(error)
+                        
                     except exceptions.TextTooLarge:
                         st.write("Bill is too large to summarize entirely, please select a section to summarize instead")
 

@@ -439,7 +439,7 @@ class Bill:
             text = self.getText()
 
         if not text:
-            raise exceptions.NoText("Text is not available for this bill.")
+            raise exceptions.NoText("The text of this bill has not yet been made available by Congress.")
 
         beginning = "Summarize the following bill in detail: \n\n"
         ending = "\n\Summary:"
