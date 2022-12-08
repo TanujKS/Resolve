@@ -124,10 +124,10 @@ def renderBill(bill, **kwargs):
                 if st.button("Fetch Text", key=key2):
                     sections = bill.getSections()
 
-                    if not sections:
+                    if sections:
+                        writeSections(sections)
+                    else:
                         st.error("The text of this bill has not yet been made available by Congress.")
-
-                    writeSections(sections)
 
 
             with tab3:
@@ -162,7 +162,7 @@ def renderBill(bill, **kwargs):
                             st.session_state[f"{bill.type}_{str(bill.number)}"]['feedback_received'] = True
                             #st.session_state[number]['feedback_received'] = True
 
-                        st.button("I Like This!", on_click=good_summary_click, args=(bill, summary), key=key4)
+                        st.button("I Like This!", on_click=good_summary_click, args=(bill, summary), key=key4, enabled=False)
 
                     except exceptions.TextTooLarge:
                         st.write("Bill is too large to summarize entirely, please select a section to summarize instead")
