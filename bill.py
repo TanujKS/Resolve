@@ -399,7 +399,7 @@ class Bill:
             text = self.getText()
 
         if not text:
-            raise exceptions.NoText("Text is not available for this bill")
+            raise exceptions.NoText("The text of this bill has not yet been made available by Congress.")
 
         model = "text-davinci-003"
         beginning = "Imagine you are a smart politican listing and explaining in detail 3 of the most important takeaways from the following text: \n\n"
