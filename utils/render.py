@@ -124,13 +124,14 @@ def renderBill(bill, **kwargs):
                 if st.button("Fetch Text", key=key2):
                     try:
                         sections = bill.getSections()
+
+                        if sections:
+                            writeSections(sections)
+                        else:
+                            raise exceptions.NoText("The text of this bill has not yet been made available by Congress.")
+                            
                     except exceptions.NoText as error:
                         st.error(error)
-                        
-                    if sections:
-                        writeSections(sections)
-                    else:
-                        st.error("The text of this bill has not yet been made available by Congress.")
 
 
             with tab3:
