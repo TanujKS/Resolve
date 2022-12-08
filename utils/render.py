@@ -162,7 +162,7 @@ def renderBill(bill, **kwargs):
                             st.session_state[f"{bill.type}_{str(bill.number)}"]['feedback_received'] = True
                             #st.session_state[number]['feedback_received'] = True
 
-                        st.button("I Like This!", on_click=good_summary_click, args=(bill, summary), key=key4, enabled=False)
+                        st.button("I Like This!", on_click=good_summary_click, args=(bill, summary), key=key4, disabled=True)
 
                     except exceptions.TextTooLarge:
                         st.write("Bill is too large to summarize entirely, please select a section to summarize instead")
