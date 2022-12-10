@@ -296,6 +296,7 @@ class Bill:
 
         text = self.pruneText(rawText)
         text = self.cleanRawText(text)
+
         return text
 
 

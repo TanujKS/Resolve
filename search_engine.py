@@ -8,11 +8,10 @@ import requests
 from utils import utils, exceptions
 from utils.utils import downloadFile
 
+model = SentenceTransformer("bert-base-nli-mean-tokens", cache_folder="cache_model")
 
 #Loads the embeddings for the Congress bill model which powers the search engine, if it cannot be found it is downloaded from the database
 def loadBillModel(path, update_status):
-    model = SentenceTransformer("bert-base-nli-mean-tokens")
-
     if not os.path.exists(path) or update_status:
         downloadFile(path)
 
