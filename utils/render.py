@@ -17,7 +17,7 @@ def writeSections(sections: dict):
         st.write(item.get('text'))
 
 
-def renderBills(bills):
+def renderBills(bills, *, raise_no_bill_error=True):
     if 'offset' not in st.session_state:
         st.session_state.offset = 0
 
@@ -29,7 +29,13 @@ def renderBills(bills):
     key5 = len(bills) * (2**3)
 
     for bill in bills:
-        renderBill(bill, key1=key1, key2=key2, key3=key3, key4=key4, key5=key5)
+        if raise_no_bill_error:
+            renderBill(bill, key1=key1, key2=key2, key3=key3, key4=key4, key5=key5)
+        else:
+            try:
+                renderBill(bill, key1=key1, key2=key2, key3=key3, key4=key4, key5=key5)
+            except exceptions.NoBill as error:
+                print(error)
         key1 += 1
         key2 += 1
         key3 += 1
@@ -129,7 +135,7 @@ def renderBill(bill, **kwargs):
                             writeSections(sections)
                         else:
                             raise exceptions.NoText("The text of this bill has not yet been made available by Congress.")
-                            
+
                     except exceptions.NoText as error:
                         st.error(error)
 

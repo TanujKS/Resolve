@@ -18,6 +18,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
 class Bill:
+    current_session = 117
     base_url = "https://api.congress.gov/v3/bill"
     apikey_header = f"api_key={CONGRESS_API_KEY}"
 
@@ -48,6 +49,8 @@ class Bill:
     "House Resolution": "hres",
     "Senate Resolution": "sres"
     }
+
+    congresses = [i for i in range(current_session, 81, -1)]
 
 
     def __init__(self, congress, type, number):
@@ -206,7 +209,7 @@ class Bill:
         data = requests.get(f"{self.base_url}/{self.congress}/{self.type}/{self.number}/text?{self.apikey_header}", verify=True).json()
 
         if data.get('error'):
-            raise Exception(data['error'])
+            raise exceptions.NoBill(data['error'])
 
         if data.get('textVersions'):
             for format in data['textVersions'][0]['formats']:

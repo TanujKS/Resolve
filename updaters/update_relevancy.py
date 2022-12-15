@@ -14,6 +14,7 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-e", "--encoder", help="Encodes models with different PyTorch devices", default="cuda")
+parser.add_argument("-na", "--new-auth", help="Fetches a new auth token for Reddit's API", action="store_true")
 args = parser.parse_args()
 
 cred = credentials.Certificate("credentials.json")
@@ -21,7 +22,7 @@ firebase_admin.initialize_app(cred)
 db = firestore.client()
 
 base_headers = {'user-agent': 'Windows PC:resolve:v1.0.0 (by /u/awesome225007)'}
-newAuth = True
+newAuth = args.new_auth
 model = SentenceTransformer("bert-base-nli-mean-tokens")
 
 
@@ -41,7 +42,7 @@ def getAuthToken():
 
 
 def writeAuthToken(token):
-    with open(".env", "a") as file:
+    with open(".env", "w+") as file:
         file.write("\n")
         file.write(f"REDDIT_API_KEY = {token}")
 

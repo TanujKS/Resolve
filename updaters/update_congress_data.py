@@ -85,15 +85,17 @@ def addBill(bill_data):
 
     except exceptions.NoText:
         print('No Text Available')
-        return
+        return False
 
     if not bill.text:
-        return
+        return False
 
     byte_count = len(bill.text.encode('utf8'))
     if byte_count < 1000000:
         doc = db.collection("congress_data").document(str(bill.congress)).collection(bill.type).document(str(bill.number))
         doc.set(bill.to_dict())
+
+    return True
 
 
 def updateBills(congress, type):
@@ -110,8 +112,9 @@ def updateBills(congress, type):
 
     for bill_data in live_bills:
         if bill_data['number'] in missing_bills:
-            addBill(bill_data)
-            print("Added bill", bill_data['type'], bill_data['number'])
+            res = addBill(bill_data)
+            if res:
+                print("Added bill", bill_data['type'], bill_data['number'])
     db.collection("congress_data").document(congress).collection(type).document("0").delete()
 
 
@@ -123,4 +126,4 @@ def main():
 
 
 if __name__ == "__main__":
-    build_database()
+    main()

@@ -45,13 +45,13 @@ bill_number = st.number_input("Search by Bill number",
     step=1
     )
 
-
+st.write("Or Search By:")
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
     congress = st.selectbox(
         'Select a Congress session',
-        (range(117, 81, -1))
+        (Bill.congresses)
         )
 
     type_of_legislation = st.selectbox(
@@ -94,18 +94,39 @@ with col4:
 
 
 
-@st.experimental_memo(show_spinner=False, experimental_allow_widgets=True)
+@st.experimental_memo(show_spinner=True, experimental_allow_widgets=True)
 def getRecentBills(congress, type, *, sort, offset, limit):
     return Bill.recentBills(congress, type, sort=sort, offset=offset, limit=limit)
 
 
+@st.experimental_memo(show_spinner=True, experimental_allow_widgets=True)
+def getBillsByNumber(number, *, limit, offset):
+    bills = []
+
+    max = offset + limit
+    if (max > len(Bill.congresses)):
+        max = len(Bill.congresses)
+
+    for index in range(offset, max):
+        c = Bill.congresses[0] - index
+
+        bill = Bill(c, Bill.types_of_legislation_display[type_of_legislation], number=bill_number)
+        try:
+            bill.title = bill.getTitle()
+        except:
+            pass
+        bills.append(bill)
+    return bills
+
+
 def main():
     if bill_number == 0:
-        recentBills = getRecentBills(congress, Bill.types_of_legislation_display[type_of_legislation], sort=Bill.types_of_sort[sort_by], offset=st.session_state.home_offset, limit=limit)
-        renderBills(recentBills)
+        bills = getRecentBills(congress, Bill.types_of_legislation_display[type_of_legislation], sort=Bill.types_of_sort[sort_by], offset=st.session_state.home_offset, limit=limit)
+        renderBills(bills)
     else:
-        bill = Bill(congress, Bill.types_of_legislation_display[type_of_legislation], number=bill_number)
-        renderBills([bill])
+        bills = getBillsByNumber(bill_number, limit=limit, offset=st.session_state.home_offset)
+        renderBills(bills, raise_no_bill_error=False)
+
 
 
 try:
