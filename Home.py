@@ -94,12 +94,12 @@ with col4:
 
 
 
-@st.experimental_memo(show_spinner=True, experimental_allow_widgets=True)
+@st.experimental_memo(show_spinner=False, experimental_allow_widgets=True)
 def getRecentBills(congress, type, *, sort, offset, limit):
     return Bill.recentBills(congress, type, sort=sort, offset=offset, limit=limit)
 
 
-@st.experimental_memo(show_spinner=True, experimental_allow_widgets=True)
+@st.experimental_memo(show_spinner=False, experimental_allow_widgets=True)
 def getBillsByNumber(number, *, limit, offset):
     bills = []
 
