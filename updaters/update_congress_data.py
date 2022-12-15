@@ -93,8 +93,11 @@ def addBill(bill_data):
     byte_count = len(bill.text.encode('utf8'))
     if byte_count < 1000000:
         doc = db.collection("congress_data").document(str(bill.congress)).collection(bill.type).document(str(bill.number))
-        doc.set(bill.to_dict())
-
+        try:
+            doc.set(bill.to_dict())
+        except Exception as error:
+            print(error)
+            return False
     return True
 
 
