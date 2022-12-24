@@ -51,6 +51,21 @@ class Bill:
     }
 
     congresses = [i for i in range(current_session, 81, -1)]
+    attributes = ['congress', 'type', 'number', 'titles', 'title', 'summary', 'text', 'latestAction', 'originChamber', 'introducedDate', 'sponsors', 'policyArea', 'laws', 'cboCostEstimates', 'committeeReports', 'constitutionalAuthorityStatementText', 'updateDate']
+    _titles = None
+    _title = None
+    _summary = None
+    _latestAction = None
+    _originChamber = None
+
+    _introducedDate = None
+    _sponsors = None
+    _policyArea = None
+    _laws = None
+    _cboCostEstimates = None
+    _committeeReports = None
+    _constitutionalAuthorityStatementText = None
+    _updateDate = None
 
 
     def __init__(self, congress, type, number):
@@ -141,17 +156,17 @@ class Bill:
         if not bill:
             raise exceptions.NoBill(f"Bill {self.type.upper()} {self.number} does not exist")
 
-        self.introducedDate = bill.get('introducedDate')
-        self.sponsors = bill.get('sponsors')
-        self.title = bill.get('title')
-        self.policyArea = bill.get('policyArea')
-        self.laws = bill.get('laws')
-        self.cboCostEstimates = bill.get('cboCostEstimates')
-        self.committeeReports = bill.get('committeeReports')
-        self.constitutionalAuthorityStatementText = bill.get('constitutionalAuthorityStatementText')
-        self.updateDate = bill.get('updateDate')
-        self.latestAction = bill.get('latestAction')
-        self.originChamber = bill.get('originChamber')
+        self._introducedDate = bill.get('introducedDate')
+        self._sponsors = bill.get('sponsors')
+        self._title = bill.get('title')
+        self._policyArea = bill.get('policyArea')
+        self._laws = bill.get('laws')
+        self._cboCostEstimates = bill.get('cboCostEstimates')
+        self._committeeReports = bill.get('committeeReports')
+        self._constitutionalAuthorityStatementText = bill.get('constitutionalAuthorityStatementText')
+        self._updateDate = bill.get('updateDate')
+        self._latestAction = bill.get('latestAction')
+        self._originChamber = bill.get('originChamber')
 
         return True
 
@@ -169,6 +184,14 @@ class Bill:
         titles = [*set(titles)] #removes duplicates
 
         return titles
+
+
+    @property
+    def titles(self):
+        if _titles == None:
+            print("Fetching titles")
+            _titles = getTitles()
+        return _titles
 
 
     @staticmethod
@@ -194,15 +217,23 @@ class Bill:
 
 
     def getTitle(self):
-        titles = self.getTitles()
+        titles = self.titles
 
         if titles:
             shorttestTitle = self.getShortestTitle(titles)
             shorttestTitle = self.pruneText(shorttestTitle)
             return shorttestTitle
 
-        else:
-            return None
+
+    @property
+    def title(self):
+        if _title == None:
+            _title = getTitle()
+
+            if _title == None:
+                _title = []
+
+        return _title
 
 
     def getTextURL(self, type="Formatted Text"):
@@ -217,9 +248,6 @@ class Bill:
                     return format['url']
             else:
                 raise exceptions.NoText("The text of this bill has not yet been made available by Congress.")
-
-        else:
-            return None
 
 
     #Removes most non ASCII chars from text
@@ -445,7 +473,7 @@ class Bill:
         if not text:
             raise exceptions.NoText("The text of this bill has not yet been made available by Congress.")
 
-        beginning = "Summarize the following bill in detail: \n\n"
+        beginning = "Summarize the following bill, citing specific details in your summary: \n\n"
         ending = "\n\Summary:"
         fullPrompt = beginning + text + ending
         price = 0
