@@ -100,7 +100,7 @@ def getRecentBills(congress, type, *, sort, offset, limit):
 
 
 @st.experimental_memo(show_spinner=False, experimental_allow_widgets=True)
-def getBillsByNumber(number, *, limit, offset):
+def getBillsByNumber(number, *, type, limit, offset):
     bills = []
 
     max = offset + limit
@@ -124,7 +124,7 @@ def main():
         bills = getRecentBills(congress, Bill.types_of_legislation_display[type_of_legislation], sort=Bill.types_of_sort[sort_by], offset=st.session_state.home_offset, limit=limit)
         renderBills(bills)
     else:
-        bills = getBillsByNumber(bill_number, limit=limit, offset=st.session_state.home_offset)
+        bills = getBillsByNumber(bill_number, limit=limit, offset=st.session_state.home_offset, type=type_of_legislation)
         renderBills(bills, raise_no_bill_error=False)
 
 
