@@ -20,31 +20,39 @@ args = parser.parse_args()
 cred = credentials.Certificate("credentials.json")
 firebase_admin.initialize_app(cred)
 db = firestore.client()
+load_dotenv()
 
-base_headers = {'user-agent': 'Windows PC:resolve:v1.0.0 (by /u/awesome225007)'}
+username = "garbage22507"
+client_id = "yKxWouPF79VSwyXRWL4jJQ"
+base_headers = {'user-agent': f'Windows PC:resolve:v1.0.0 (by /u/{username})'}
 newAuth = args.new_auth
 model = SentenceTransformer("bert-base-nli-mean-tokens")
 
 
 def getAuthToken():
-    auth = requests.auth.HTTPBasicAuth('oucOYb84R-BjyxsOP2quSw', 'RUU_LRK02wdElbhX93rOUpEjqA7-kQ')
+    auth = requests.auth.HTTPBasicAuth(client_id, os.getenv("REDDIT_SECRET"))
 
     data = {'grant_type': 'password',
-            'username': 'awesome22507',
-            'password': 'doglover@cool'}
+            'username': username,
+            'password': os.getenv("REDDIT_PASSWORD")}
 
 
-    res = requests.post('https://www.reddit.com/api/v1/access_token', auth=auth, data=data, headers=base_headers)
+    res = requests.post('https://www.reddit.com/api/v1/access_token', auth=auth, data=data, headers=base_headers).json()
 
-    TOKEN = res.json()['access_token']
+    TOKEN = res.get('access_token')
+    if not TOKEN:
+        raise Exception(res)
+
     print(TOKEN)
     return TOKEN
 
 
 def writeAuthToken(token):
+    password = os.getenv("REDDIT_PASSWORD")
+    secret = os.getenv("REDDIT_SECRET")
+
     with open(".env", "w+") as file:
-        file.write("\n")
-        file.write(f"REDDIT_API_KEY = {token}")
+        file.write(f"REDDIT_SECRET={secret}\nREDDIT_PASSWORD={password}\nREDDIT_API_KEY={token}")
 
     load_dotenv()
 
