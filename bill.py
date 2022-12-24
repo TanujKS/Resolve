@@ -431,6 +431,8 @@ class Bill:
         print("Response", response)
 
         choice = response['choices'][0]['text']
+        choice = self.pruneText(choice)
+        
         if "\n" in choice:
             choiceList = choice.split("\n")
         else:
@@ -445,7 +447,7 @@ class Bill:
         if not text:
             raise exceptions.NoText("The text of this bill has not yet been made available by Congress.")
 
-        beginning = "Summarize the following bill in detail: \n\n"
+        beginning = "Imagine you are a smart politican expertly summarizing the following bill including specific details in your summary: \n\n"
         ending = "\n\Summary:"
         fullPrompt = beginning + text + ending
         price = 0
@@ -505,11 +507,12 @@ class Bill:
 
         response = openai.Completion.create(**kwargs)
 
-        print(response)
 
         response = response['choices'][0]['text']
 
         response = self.pruneText(response)
+
+        print("Pruned", response)
 
         print("Price", price)
         return response
