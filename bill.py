@@ -432,7 +432,7 @@ class Bill:
 
         choice = response['choices'][0]['text']
         choice = self.pruneText(choice)
-        
+
         if "\n" in choice:
             choiceList = choice.split("\n")
         else:
@@ -506,15 +506,12 @@ class Bill:
             return response
 
         response = openai.Completion.create(**kwargs)
-
+        print("Response", response)
+        print("Price", price)
 
         response = response['choices'][0]['text']
-
         response = self.pruneText(response)
 
-        print("Pruned", response)
-
-        print("Price", price)
         return response
 
 
