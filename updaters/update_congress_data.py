@@ -9,7 +9,7 @@ from utils import exceptions
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-c", "--congress", help="Starts updating at a certain Congress session", default=117)
+parser.add_argument("-c", "--congress", help="Starts updating at a certain Congress session", default=118)
 args = parser.parse_args()
 
 types_of_legislation = ["hr", "s", "hjres","sjres", "hconres", "sconres", "hres", "sres"]

@@ -18,7 +18,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
 class Bill:
-    current_session = 117
+    current_session = 118
     base_url = "https://api.congress.gov/v3/bill"
     apikey_header = f"api_key={CONGRESS_API_KEY}"
 
@@ -405,12 +405,12 @@ class Bill:
         if not text:
             raise exceptions.NoText("The text of this bill has not yet been made available by Congress.")
 
-        model = "text-davinci-003"
+        model = "gpt-3.5-turbo"
         beginning = "Imagine you are a smart politican listing and explaining in detail 3 of the most important takeaways from the following text: \n\n"
         ending = "\nList:"
         kwargs = {
-            "model": "text-curie-001",
-            "prompt": beginning + text + ending,
+            "model": model,
+             "messages": [{"role": "user", "content": beginning + text + ending}],
             "temperature": 0.4,
             "max_tokens": 256,
             "top_p": 1,
@@ -420,17 +420,17 @@ class Bill:
 
 
         try:
-            response = openai.Completion.create(**kwargs)
+            response = openai.ChatCompletion.create(**kwargs)
         except openai.error.InvalidRequestError:
-            kwargs['model'] = "text-davinci-003"
+            kwargs['model'] = model
             try:
-                response = openai.Completion.create(**kwargs)
+                response = openai.ChatCompletion.create(**kwargs)
             except openai.error.InvalidRequestError:
                 raise exceptions.TextTooLarge("Text is too large to get a brief, try fetching a summary instead")
 
         print("Response", response)
 
-        choice = response['choices'][0]['text']
+        choice = response['choices'][0]['message']['content']
         choice = self.pruneText(choice)
 
         if "\n" in choice:
@@ -447,12 +447,13 @@ class Bill:
         if not text:
             raise exceptions.NoText("The text of this bill has not yet been made available by Congress.")
 
+        model = "gpt-3.5-turbo"
         beginning = "Imagine you are a smart politican expertly summarizing the following bill including specific details in your summary: \n\n"
         ending = "\n\Summary:"
         fullPrompt = beginning + text + ending
         price = 0
         kwargs = {
-            "prompt": fullPrompt,
+             "messages": [{"role": "user", "content": fullPrompt}],
             "temperature": 0.2,
             "max_tokens": 300,
             "top_p": 1,
@@ -461,13 +462,9 @@ class Bill:
         }
         tokens = getTokens(fullPrompt, kwargs['max_tokens'])
 
-        if tokens <= 2049:
-            #kwargs["model"] = "curie:ft-personal-2022-10-23-09-13-31"
-            kwargs['model'] = 'text-curie-001'
-            price += getPrice(tokens, model="curie", fineTuned=True)
-        elif tokens >= 2049 and tokens <= 4097:
-            kwargs['model'] = "text-davinci-003"
-            price += getPrice(tokens, model="davinci", fineTuned=False)
+        if tokens <= 4096:
+            kwargs['model'] = model
+            price += getPrice(tokens, model="chat", fineTuned=False)
 
         else:
             sections = self.getSections()
@@ -476,7 +473,7 @@ class Bill:
                 raise exceptions.TextTooLarge("Text is too large to summarize")
 
             beginning = "Write a concise 20 word summary of the following bill: \n\n"
-            kwargs['model'] = "text-curie-001"
+            kwargs['model'] = model
             count = 0
             result = []
 
@@ -493,11 +490,11 @@ class Bill:
                 if tokens > 2049:
                     continue
 
-                price += getPrice(tokens, model="curie", fineTuned=False)
+                price += getPrice(tokens, model="chat", fineTuned=False)
 
 
-                summary = openai.Completion.create(**kwargs)
-                summary = summary['choices'][0]['text']
+                summary = openai.ChatCompletion.create(**kwargs)
+                summary = summary['choices'][0]['message']['content']
                 summary = self.pruneText(summary)
                 print('\n\n\n', count, 'of', len(sections.keys()), ' - ', summary)
                 result.append(summary)
@@ -505,11 +502,11 @@ class Bill:
             response = '\n\n'.join(result)
             return response
 
-        response = openai.Completion.create(**kwargs)
+        response = openai.ChatCompletion.create(**kwargs)
         print("Response", response)
         print("Price", price)
 
-        response = response['choices'][0]['text']
+        response = response['choices'][0]['message']['content']
         response = self.pruneText(response)
 
         return response

@@ -52,7 +52,8 @@ def getPrice(tokens, *, model, fineTuned=False):
     "davinci": 0.02,
     "curie": 0.002,
     "babbage": 0.0005,
-    "ada": 0.0004
+    "ada": 0.0004,
+    "chat": 0.002,
     }
 
     fine_tuned_models = {
