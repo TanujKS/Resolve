@@ -40,7 +40,6 @@ def renderBills(bills, *, raise_no_bill_error=True):
         key2 += 1
         key3 += 1
         key4 += 1
-        key5 += 1
 
 
 def renderBill(bill, **kwargs):
@@ -56,7 +55,6 @@ def renderBill(bill, **kwargs):
     key2 = kwargs.get('key2')
     key3 = kwargs.get('key3')
     key4 = kwargs.get('key4')
-    key5 = kwargs.get('key5')
 
     try:
         with st.expander(f"{bill.type.upper()} {bill.number}: {bill.title}"):
@@ -144,35 +142,15 @@ def renderBill(bill, **kwargs):
                 #user_data = getattr(st.session_state, str(bill.number), None)
                 user_data = st.session_state[f"{bill.type}_{str(bill.number)}"]
 
-                summarized = user_data.get('feedback_received', False)
-                summarized_section = getattr(st.session_state, f"{bill.type}_{str(bill.number)}_section", None)
+                summarized_section = getattr(st.session_state, f"{bill.congress}_{bill.type}_{str(bill.number)}_section", None)
 
                 summarize_button = st.button("Summarize", key=key3)
-
+                
                 if summarize_button:
-                    st.session_state[f"{bill.type}_{str(bill.number)}"]['feedback_received'] = False
-
                     try:
                         summary = bill.generateSummary()
 
                         st.write(summary)
-
-                        def good_summary_click(bill, completion):
-
-                            data = {
-                            "prompt": bill.getText(),
-                            "completion": completion
-                            }
-
-                            with open("congress_data/human_feedback.jsonl", "a") as file:
-                                file.write("\n")
-                                file.write(json.dumps(data))
-
-                            number = str(bill.number)
-                            st.session_state[f"{bill.type}_{str(bill.number)}"]['feedback_received'] = True
-                            #st.session_state[number]['feedback_received'] = True
-
-                        st.button("I Like This!", on_click=good_summary_click, args=(bill, summary), key=key4, disabled=True)
 
                     except exceptions.NoText as error:
                         st.error(error)
@@ -183,13 +161,10 @@ def renderBill(bill, **kwargs):
                         section = st.selectbox(
                             'Select a section too summarize',
                             (content.get('subheader', section) for section, content in bill.getSections().items()),
-                            key=f"{bill.type}_{str(bill.number)}_section"
+                            key=f"{bill.congress}_{bill.type}_{str(bill.number)}_section"
                             )
 
                         #st.session_state[str(bill.number)]['summarized_section'] = section
-
-                if summarized:
-                    st.subheader("Thanks for your feedback!")
 
                 if summarized_section:
                     st.write(summarized_section)
@@ -205,9 +180,9 @@ def renderBill(bill, **kwargs):
                     st.write(bill.generateSummary(text=sections[section]['text']))
 
             with tab4:
-                briefed_section = getattr(st.session_state, f"{bill.type}_{str(bill.number)}_brief", None)
+                briefed_section = getattr(st.session_state, f"{bill.congress}_{bill.type}_{str(bill.number)}_brief", None)
 
-                brief_button = st.button("Get Brief", key=key5)
+                brief_button = st.button("Get Brief", key=key4)
 
                 if brief_button:
 
@@ -226,7 +201,7 @@ def renderBill(bill, **kwargs):
                         brief = st.selectbox(
                         "Select a section too brief",
                         (content.get('subheader', section) for section, content in bill.getSections().items()),
-                        key=f"{bill.type}_{str(bill.number)}_brief"
+                        key=f"{bill.congress}_{bill.type}_{str(bill.number)}_brief"
                         )
 
 

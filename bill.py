@@ -406,11 +406,12 @@ class Bill:
             raise exceptions.NoText("The text of this bill has not yet been made available by Congress.")
 
         model = "gpt-3.5-turbo"
-        beginning = "Imagine you are a smart politican listing and explaining in detail 3 of the most important takeaways from the following text: \n\n"
-        ending = "\nList:"
         kwargs = {
             "model": model,
-             "messages": [{"role": "user", "content": beginning + text + ending}],
+             "messages": [
+                {"role": "system", "content": "Imagine you are a smart politician listing and explaining in detail three of the most important takeaways from the following Congressional bill. Do not introduce yourself, just list your points."},
+                {"role": "user", "content": text},
+                ],
             "temperature": 0.4,
             "max_tokens": 256,
             "top_p": 1,
@@ -421,12 +422,8 @@ class Bill:
 
         try:
             response = openai.ChatCompletion.create(**kwargs)
-        except openai.error.InvalidRequestError:
-            kwargs['model'] = model
-            try:
-                response = openai.ChatCompletion.create(**kwargs)
-            except openai.error.InvalidRequestError:
-                raise exceptions.TextTooLarge("Text is too large to get a brief, try fetching a summary instead")
+        except openai.InvalidRequestError as error:
+            raise exceptions.TextTooLarge("Text is too large to get a brief, try fetching a summary instead")
 
         print("Response", response)
 
@@ -448,22 +445,22 @@ class Bill:
             raise exceptions.NoText("The text of this bill has not yet been made available by Congress.")
 
         model = "gpt-3.5-turbo"
-        beginning = "Imagine you are a smart politican expertly summarizing the following bill including specific details in your summary: \n\n"
-        ending = "\n\Summary:"
-        fullPrompt = beginning + text + ending
         price = 0
         kwargs = {
-             "messages": [{"role": "user", "content": fullPrompt}],
+            "model": model,
+             "messages": [
+                {"role": "system", "content": "Imagine you are a smart politician expertly summarizing the following Congressional bill including specific details in your summary"},
+                {"role": "user", "content": text},
+            ],
             "temperature": 0.2,
             "max_tokens": 300,
             "top_p": 1,
             "frequency_penalty": 1,
             "presence_penalty": -1,
         }
-        tokens = getTokens(fullPrompt, kwargs['max_tokens'])
+        tokens = getTokens(text, kwargs['max_tokens'])
 
         if tokens <= 4096:
-            kwargs['model'] = model
             price += getPrice(tokens, model="chat", fineTuned=False)
 
         else:
@@ -472,8 +469,7 @@ class Bill:
             if len(list(sections.keys())) > 10:
                 raise exceptions.TextTooLarge("Text is too large to summarize")
 
-            beginning = "Write a concise 20 word summary of the following bill: \n\n"
-            kwargs['model'] = model
+            kwargs['messages'][0]['content'] = "Imagine you are a smart politician summarizing the following Congressional bill in a concise 20 word summary"
             count = 0
             result = []
 
@@ -484,9 +480,9 @@ class Bill:
                 if not text:
                     continue
 
-                kwargs['prompt'] = beginning + text + ending
+                kwargs['messages'][1][content] = text
 
-                tokens = getTokens(kwargs['prompt'], kwargs['max_tokens'])
+                tokens = getTokens(text, kwargs['max_tokens'])
                 if tokens > 2049:
                     continue
 
