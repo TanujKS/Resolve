@@ -1,8 +1,6 @@
 # Resolve
 A webapp for summarizing Congressional bills using GPT-3 to allow all citizens to understand how issues are being dealt with in Congress. Submitted to CAC 2022 (CA-18)
 
-Resolve can be accsessed at the URL: https://resolve.streamlit.app
-
 
 # Our Mission
 Too many citizens here in the United States are discouraged from participating in politics with all the political jargon and legal language. Resolve aims to solve that problem by using advanced Artificial Intelligence and Machine Learning to explain Congressional bills in language humans can understand.
